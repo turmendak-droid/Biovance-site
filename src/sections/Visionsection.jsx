@@ -9,48 +9,48 @@ const Visionsection = () => {
       title: "AI That Learns from Nature",
       preview: "Intelligence modeled after life itself.",
       expanded: "Nature has been refining intelligence for billions of years. At Zytherion Biovance, we study these organic systems to build AI that learns like nature — not against it. Our models adapt, self-correct, and evolve, helping researchers discover natural patterns faster than ever before. The goal isn't to simulate nature — it's to collaborate with it.",
-      smallImage: "src/assets/41308.jpg",
-      heroImage: "src/assets/41308.jpg"
+      smallImage: "/src/assets/41308.jpg",
+      heroImage: "/src/assets/41308.jpg"
     },
     {
       id: 2,
       title: "The Ocean Thinks in Data",
       preview: "Marine AI that listens to the planet's pulse.",
       expanded: "Beneath the waves lies a data ecosystem that holds answers to sustainability. Our Marine AI systems analyze millions of points — from coral health to ocean currents — to help predict changes before they happen. By transforming oceanic chaos into clarity, we're giving marine scientists new tools to protect life below the surface.",
-      smallImage: "src/assets/vibrant-coral-reef-ecosystem.webp",
-      heroImage: "src/assets/vibrant-coral-reef-ecosystem.webp"
+      smallImage: "/src/assets/vibrant-coral-reef-ecosystem.webp",
+      heroImage: "/src/assets/vibrant-coral-reef-ecosystem.webp"
     },
     {
       id: 3,
       title: "Awakening Earth's Code",
       preview: "Understanding the algorithms of climate and life.",
       expanded: "Climate systems are not random — they follow hidden codes that connect every forest, ocean, and cloud. Our Climate AI deciphers these codes, revealing patterns that help predict climate events and support real-world restoration. We call it Earth's Code — the intelligence that sustains all life.",
-      smallImage: "src/assets/27Storms.webp",
-      heroImage: "src/assets/27Storms.webp"
+      smallImage: "/src/assets/27Storms.webp",
+      heroImage: "/src/assets/27Storms.webp"
     },
     {
       id: 4,
       title: "Wildlife Intelligence",
       preview: "Tracking nature's rhythm to protect its balance.",
       expanded: "Every species tells a story of survival and adaptation. Wildlife AI maps those stories — from migration paths to behavioral data — giving conservationists the insight they need to protect biodiversity. The result: an evolving digital ecosystem that listens to life itself.",
-      smallImage: "src/assets/myanmar_tm5_2004349_lrg.jpg",
-      heroImage: "src/assets/myanmar_tm5_2004349_lrg.jpg"
+      smallImage: "/src/assets/myanmar_tm5_2004349_lrg.jpg",
+      heroImage: "/src/assets/myanmar_tm5_2004349_lrg.jpg"
     },
     {
       id: 5,
       title: "Building Climate Resilience",
       preview: "AI that helps ecosystems adapt and thrive.",
       expanded: "Nature has always found a way to adapt. Our Resilience AI studies how ecosystems recover after stress, enabling governments, NGOs, and scientists to plan smarter restoration strategies. Because protecting tomorrow begins with understanding how the Earth heals today.",
-      smallImage: "src/assets/080824_Reforestation-projects-around-the-world-success-stories-and-lessons-learnedVisual-2.webp",
-      heroImage: "src/assets/080824_Reforestation-projects-around-the-world-success-stories-and-lessons-learnedVisual-2.webp"
+      smallImage: "/src/assets/080824_Reforestation-projects-around-the-world-success-stories-and-lessons-learnedVisual-2.webp",
+      heroImage: "/src/assets/080824_Reforestation-projects-around-the-world-success-stories-and-lessons-learnedVisual-2.webp"
     },
     {
       id: 6,
       title: "The Future Ecosystem",
       preview: "A world where AI and nature evolve together.",
       expanded: "Zytherion Biovance envisions an interconnected network of intelligent systems — Wildlife AI, Marine AI, Climate AI, and more — that continuously learn from one another. Together, they form the foundation of a global AI ecosystem, designed not to control nature, but to amplify its resilience. The future of Earth is not artificial — it's intelligent.",
-      smallImage: "src/assets/rs=w_1200,cg_true (1).webp",
-      heroImage: "src/assets/rs=w_1200,cg_true (1).webp"
+      smallImage: "/src/assets/rs=w_1200,cg_true (1).webp",
+      heroImage: "/src/assets/rs=w_1200,cg_true (1).webp"
     }
   ]
 
