@@ -6,7 +6,7 @@ import Visionsection from './sections/Visionsection'
 const App = () => {
   return (
     <div>
-      <div className='h-screen bg-cover bg-center relative' style={{backgroundImage: 'url(/src/assets/myanmar_tm5_2004349_lrg.jpg)', backgroundPosition: 'center bottom'}}>
+      <div className='h-screen bg-cover bg-center relative' style={{backgroundImage: 'url(/assets/myanmar_tm5_2004349_lrg.jpg)', backgroundPosition: 'center bottom'}}>
         <Navbar />
         <Hero />
       </div>
