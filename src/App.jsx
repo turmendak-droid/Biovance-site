@@ -2,6 +2,7 @@ import React from 'react'
 import Navbar from './components/Navbar'
 import Hero from './sections/Hero'
 import Visionsection from './sections/Visionsection'
+import Footer from './components/Footer'
 
 const App = () => {
   return (
@@ -10,7 +11,11 @@ const App = () => {
         <Navbar />
         <Hero />
       </div>
-      <Visionsection />
+      <div className='relative'>
+        <div className='absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#0B593E] to-transparent pointer-events-none z-10'></div>
+        <Visionsection />
+      </div>
+      <Footer />
     </div>
   )
 }

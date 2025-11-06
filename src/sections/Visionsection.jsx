@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { motion } from 'framer-motion'
 
 const Visionsection = () => {
   const [activeVision, setActiveVision] = useState(null)
@@ -55,44 +56,68 @@ const Visionsection = () => {
   ]
 
   return (
-    <div className='min-h-screen bg-[#0e4903] flex items-center justify-center py-20 px-6 md:px-10'>
-      <div className='w-full md:w-4/5 rounded-3xl bg-gradient-to-br from-[#faf8f2] to-[#f7f5ef] shadow-[0_30px_80px_rgba(0,0,0,0.22)] mt-28 p-8 md:p-12'>
-        <div className='text-center mb-12'>
-          <h2 className='text-4xl md:text-5xl font-light mb-4 space-grotesk bg-gradient-to-r from-[#0a3b2e] to-[#1ca57a] bg-clip-text text-transparent'>Our Vision</h2>
-          <p className='text-xl text-[#204f3b] space-grotesk'>Exploring Earth's Potential Through Intelligence</p>
-        </div>
+    <div className='min-h-screen bg-gradient-to-b from-[#052E20] to-[#0B593E] relative overflow-hidden'>
+      <div className='absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(20,184,166,0.05),transparent_70%)]'></div>
+      <div className='relative flex items-center justify-center py-20 px-6 md:px-10'>
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          viewport={{ once: true }}
+          className='w-full md:w-4/5 rounded-3xl bg-yellow-50 backdrop-blur-xl border border-white/20 shadow-[0_30px_80px_rgba(0,0,0,0.3)] mt-28 p-8 md:p-12'
+        >
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          viewport={{ once: true }}
+          className='text-center mb-12'
+        >
+          <h2 className='text-4xl md:text-5xl font-light mb-4 font-["Space_Grotesk"] bg-gradient-to-r from-green-900 via-[#041b1a] to-[#b2dfdb] bg-clip-text text-transparent'>Our Vision</h2>
+          <p className='text-xl text-black/80 font-["Inter"]'>Exploring Earth's Potential Through Intelligence</p>
+        </motion.div>
 
         {activeVision && (
-          <div className='bg-white/25 backdrop-blur-md border border-white/30 rounded-3xl p-10 shadow-[0_0_50px_rgba(14,73,3,0.1)] mb-12'>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className='bg-white/25 backdrop-blur-md border border-white/30 rounded-3xl p-10 shadow-[0_0_50px_rgba(20,184,166,0.15)] mb-12'
+          >
             <div className='flex flex-col md:flex-row gap-8 items-center'>
               <div className='md:w-1/2'>
-                <img src={activeVision.heroImage} alt={activeVision.title} className='w-full h-auto rounded-xl shadow-lg'/>
+                <img src={activeVision.heroImage} alt={activeVision.title} className='w-full h-auto rounded-xl shadow-lg ring-2 ring-green-600/30 ring-offset-2 ring-offset-transparent'/>
               </div>
               <div className='md:w-1/2'>
-                <h3 className='text-3xl md:text-4xl font-semibold text-[#113b33] mb-6 space-grotesk'>{activeVision.title}</h3>
-                <p className='text-[#335c47] text-lg leading-relaxed'>{activeVision.expanded}</p>
+                <h3 className='text-3xl md:text-4xl font-semibold text-black/70 mb-6 font-["Space_Grotesk"]'>{activeVision.title}</h3>
+                <p className='text-black/80 text-lg leading-relaxed font-["Inter"]'>{activeVision.expanded}</p>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-          {visions.map((vision) => (
-            <div
+          {visions.map((vision, index) => (
+            <motion.div
               key={vision.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              viewport={{ once: true }}
               onClick={() => setActiveVision(activeVision?.id === vision.id ? null : vision)}
-              className={`bg-[#0e4903]/10 backdrop-blur-md border rounded-2xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,255,100,0.15)] ${
+              className={`bg-green-700/40 backdrop-blur-lg border border-white/20 rounded-2xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_40px_rgba(20,184,166,0.2)] ${
                 activeVision?.id === vision.id
-                  ? 'border-[#0e4903] shadow-[0_0_40px_rgba(14,73,3,0.2)]'
-                  : 'border-[#0e4903]/10'
+                  ? 'border-green-700/50 shadow-[0_0_40px_rgba(20,184,166,0.3)] bg-white/15'
+                  : 'border-green-900/60'
               }`}
             >
-              <img src={vision.smallImage} alt={vision.title} className='w-16 h-16 mx-auto mb-4 rounded-lg object-cover'/>
-              <h4 className='text-xl font-semibold text-[#174c3c] mb-2 space-grotesk text-center'>{vision.title}</h4>
-              <p className='text-[#466959] text-center'>{vision.preview}</p>
-            </div>
+              <img src={vision.smallImage} alt={vision.title} className='w-16 h-16 mx-auto mb-4 rounded-xl object-cover ring-1 ring-zinc-900'/>
+              <h4 className='text-xl font-semibold text-black mb-2 font-["Space_Grotesk"] text-center'>{vision.title}</h4>
+              <p className='text-black/70 text-center font-["Inter"]'>{vision.preview}</p>
+            </motion.div>
           ))}
         </div>
+        </motion.div>
       </div>
     </div>
   )
