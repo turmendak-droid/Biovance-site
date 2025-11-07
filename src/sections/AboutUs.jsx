@@ -33,7 +33,7 @@ const AboutUs = () => {
   ]
 
   return (
-    <section id="about" className='py-24 relative overflow-hidden bg-gradient-to-b from-white via-white to-green-50'>
+    <section id="about" className='py-16 md:py-24 relative overflow-hidden bg-gradient-to-b from-white via-white to-green-50'>
       {/* Subtle decorative background */}
       <div className='absolute inset-0 opacity-5'>
         <div className='absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-br from-green-400 to-transparent rounded-full blur-3xl'></div>

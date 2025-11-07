@@ -9,9 +9,6 @@ import { supabase } from '../lib/supabase'
 const Updates = () => {
   const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [email, setEmail] = useState('')
-  const [subscribed, setSubscribed] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -33,23 +30,6 @@ const Updates = () => {
     fetchBlogs()
   }, [])
 
-  const handleSubscribe = async (e) => {
-    e.preventDefault()
-    setSubmitting(true)
-    const { error } = await supabase
-      .from('members')
-      .insert([{ email }])
-
-    if (error) {
-      console.error("❌ Subscription error:", error.message)
-      alert("Failed to subscribe. Please try again.")
-    } else {
-      console.log("✅ Subscribed successfully")
-      setSubscribed(true)
-      setEmail('')
-    }
-    setSubmitting(false)
-  }
 
 
   return (
@@ -143,51 +123,6 @@ const Updates = () => {
         </div>
       </section>
 
-      {/* Newsletter Signup Section */}
-      <section className='py-20 bg-gradient-to-b from-gray-50 to-white'>
-        <div className='container mx-auto px-6'>
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className='max-w-2xl mx-auto text-center'
-          >
-            <h2 className='text-4xl font-bold font-["Space_Grotesk"] text-green-900 mb-4'>
-              Join Our Newsletter
-            </h2>
-            <p className='text-lg font-["Inter"] text-gray-600 mb-8'>
-              Get notified whenever we publish new research or project updates.
-            </p>
-            {subscribed ? (
-              <div className='bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg'>
-                ✅ You're now subscribed to our updates.
-              </div>
-            ) : (
-              <form onSubmit={handleSubscribe} className='flex gap-4 max-w-md mx-auto'>
-                <input
-                  type='email'
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder='Enter your email'
-                  className='flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500'
-                  required
-                />
-                <button
-                  type='submit'
-                  disabled={submitting}
-                  className='bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50'
-                >
-                  {submitting ? 'Subscribing...' : 'Subscribe'}
-                </button>
-              </form>
-            )}
-            <p className='text-sm text-gray-500 mt-4'>
-              We'll only send meaningful conservation updates — no spam.
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
       {/* Call to Action */}
       <section className='py-16 bg-gradient-to-r from-green-700 to-emerald-600'>

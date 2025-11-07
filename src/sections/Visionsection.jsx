@@ -56,7 +56,7 @@ const Visionsection = () => {
   ]
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-[#052E20] to-[#0B593E] relative overflow-hidden pt-40'>
+    <div className='min-h-screen bg-gradient-to-b from-[#052E20] to-[#0B593E] relative overflow-hidden pt-32 md:pt-40'>
       <div className='absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(20,184,166,0.05),transparent_70%)]'></div>
       <div className='relative flex items-center justify-center py-20 px-6 md:px-10'>
         <motion.div

@@ -3,7 +3,7 @@ import ScrollExpandMedia from '../components/ui/scroll-expansion-hero'
 
 const Hero = () => {
   return (
-    <div style={{marginTop: '-130px',
+    <div className="mt-16 md:mt-20" style={{marginTop: '-130px',
       zIndex: '20'
     }}>
       <ScrollExpandMedia

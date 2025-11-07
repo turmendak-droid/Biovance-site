@@ -7,6 +7,8 @@ import Footer from './components/Footer'
 import AboutUs from './sections/AboutUs'
 import Updates from './pages/Updates'
 import BlogDetail from './pages/BlogDetail'
+import FloatingCard from './components/FloatingCard'
+import Waitlist from './pages/Waitlist'
 import Admin from './pages/Admin'
 
 const Home = () => (
@@ -15,12 +17,13 @@ const Home = () => (
       <Navbar />
       <Hero />
     </div>
-    <div className='relative mt-20'>
+    <div className='relative mt-16 md:mt-20'>
       <div className='absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#0B593E] to-transparent pointer-events-none z-10'></div>
       <Visionsection />
     </div>
     <AboutUs />
     <Footer />
+    <FloatingCard />
   </div>
 )
 
@@ -31,6 +34,7 @@ const App = () => {
       <Route path="/updates" element={<Updates />} />
       <Route path="/blogs/:id" element={<BlogDetail />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/waitlist" element={<Waitlist />} />
     </Routes>
   )
 }
