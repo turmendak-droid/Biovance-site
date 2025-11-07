@@ -200,12 +200,13 @@ const ScrollExpandMedia = ({
   return (
     <div
       ref={sectionRef}
-      className='transition-colors duration-700 ease-in-out overflow-x-hidden '
+      className='transition-colors duration-700 ease-in-out overflow-x-hidden bg-cover bg-center'
+      style={{ backgroundImage: `url(${bgImageSrc})` }}
     >
-      <section className='relative flex flex-col items-center justify-start min-h-[100dvh] mt-32'>
+      <section className='relative flex flex-col items-center justify-start min-h-screen mt-32'>
         <div className='relative w-full flex flex-col items-center min-h-[100dvh]'>
           <motion.div
-            className='absolute inset-0 z-0 h-full'
+            className='absolute inset-0 z-0'
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 - scrollProgress }}
             transition={{ duration: 0.1 }}
@@ -213,11 +214,7 @@ const ScrollExpandMedia = ({
             <img
               src={bgImageSrc}
               alt='Background'
-              className='w-screen h-screen'
-              style={{
-                objectFit: 'cover',
-                objectPosition: 'center',
-              }}
+              className='w-full h-full object-cover object-center'
             />
             <div className='absolute inset-0 bg-black/10' />
           </motion.div>
@@ -352,11 +349,12 @@ const ScrollExpandMedia = ({
             </div>
 
             <motion.section
-              className='flex flex-col w-full px-8 py-10 md:px-16 lg:py-20'
+              className='flex flex-col w-full px-8 py-10 md:px-16 lg:py-20 '
               initial={{ opacity: 0 }}
               animate={{ opacity: showContent ? 1 : 0 }}
               transition={{ duration: 0.7 }}
             >
+              
               {children}
             </motion.section>
           </div>

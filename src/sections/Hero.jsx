@@ -1,9 +1,11 @@
-import React from 'react'
+ import React from 'react'
 import ScrollExpandMedia from '../components/ui/scroll-expansion-hero'
 
 const Hero = () => {
   return (
-    <div style={{marginTop: '-130px'}}>
+    <div style={{marginTop: '-130px',
+      zIndex: '20'
+    }}>
       <ScrollExpandMedia
         mediaType="video"
         mediaSrc="/assets/178809-860734631.mp4"

@@ -26,10 +26,12 @@ export function GlowingButton({
   children,
   className,
   glowColor = "#a3e635",
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
   glowColor?: string;
+  onClick?: () => void;
 }) {
   const glowColorRgba = hexToRgba(glowColor);
   const glowColorVia = hexToRgba(glowColor, 0.075);
@@ -37,6 +39,7 @@ export function GlowingButton({
 
   return (
     <button
+      onClick={onClick}
       style={
         {
           "--glow-color": glowColorRgba,
