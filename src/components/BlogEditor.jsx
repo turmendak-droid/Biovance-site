@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
 export default function BlogEditor({ editingBlog, onSave }) {
@@ -7,6 +7,8 @@ export default function BlogEditor({ editingBlog, onSave }) {
   const [content, setContent] = useState(editingBlog?.content || "");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [showImageSelector, setShowImageSelector] = useState(false);
   const textareaRef = useRef(null);
 
   // Update state when editingBlog changes
@@ -15,6 +17,45 @@ export default function BlogEditor({ editingBlog, onSave }) {
     setAuthor(editingBlog?.author || "");
     setContent(editingBlog?.content || "");
   }, [editingBlog]);
+
+  // Load gallery images
+  useEffect(() => {
+    const loadGalleryImages = async () => {
+      try {
+        const { data, error } = await supabase.storage
+          .from('test-bucket')
+          .list('', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+
+        if (error) {
+          console.error('Error loading gallery images:', error);
+          return;
+        }
+
+        const imagesWithUrls = data.map(file => ({
+          name: file.name,
+          url: supabase.storage.from('test-bucket').getPublicUrl(file.name).data.publicUrl,
+          size: file.metadata?.size || 0,
+          created_at: file.created_at
+        }));
+
+        setGalleryImages(imagesWithUrls);
+      } catch (error) {
+        console.error('Error loading gallery images:', error);
+      }
+    };
+
+    loadGalleryImages();
+
+    // Refresh gallery images when component becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadGalleryImages();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   const insertText = (before, after = "") => {
     const textarea = textareaRef.current;
@@ -30,56 +71,157 @@ export default function BlogEditor({ editingBlog, onSave }) {
     }, 0);
   };
 
+  const insertImageFromGallery = (imageUrl, imageName) => {
+    insertText(`<img src="${imageUrl}" alt="${imageName}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; display: block;" />`);
+    setShowImageSelector(false);
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const { data, error } = await supabase.storage
-        .from("blog-image")
-        .upload(`blog-${Date.now()}.jpg`, file);
-      if (error) {
-        console.error("Upload failed", error);
+      console.log("Uploading file:", file.name, "Size:", file.size, "Type:", file.type);
+
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size too large. Please choose an image under 5MB.");
         return;
       }
-      const publicUrl = supabase.storage
-        .from("blog-image")
-        .getPublicUrl(data.path).publicUrl;
-      insertText(`<img src="${publicUrl}" alt="image" />`);
+
+      try {
+        // Create a clean filename
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fileName = `blog-${Date.now()}-${cleanFileName}`;
+
+        console.log("Attempting upload to bucket: test-bucket");
+        const { data, error } = await supabase.storage
+          .from("test-bucket")
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: file.type
+          });
+
+        if (error) {
+          console.error("Upload failed:", error);
+          console.error("Full error details:", {
+            message: error.message,
+            statusCode: error.statusCode,
+            hint: error.hint,
+            details: error.details,
+            code: error.code
+          });
+
+          // Detect permission/policy issues
+          if (error.statusCode === 403 || error.message?.includes('permission') || error.message?.includes('policy')) {
+            console.error('🔒 PERMISSION BLOCK DETECTED!')
+            console.error('💡 FIX: Create this RLS policy in Supabase SQL Editor:')
+            console.error(`
+CREATE POLICY "Allow authenticated uploads to test-bucket" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'test-bucket');
+            `)
+          }
+
+          alert("Image upload failed: " + error.message + "\n\nCheck:\n1. 'test-bucket' bucket exists in Supabase Storage\n2. You have upload permissions\n3. You're logged in as admin");
+          return;
+        }
+
+        console.log("Upload successful:", data);
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from("test-bucket")
+          .getPublicUrl(data.path);
+
+        if (!urlData?.publicUrl) {
+          console.error("Failed to get public URL");
+          alert("Upload succeeded but failed to get image URL");
+          return;
+        }
+
+        console.log("Public URL generated:", urlData.publicUrl);
+
+        // Refresh gallery images to include the new upload
+        const loadGalleryImages = async () => {
+          try {
+            const { data: galleryData, error: galleryError } = await supabase.storage
+              .from('test-bucket')
+              .list('', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+
+            if (!galleryError) {
+              const imagesWithUrls = galleryData.map(file => ({
+                name: file.name,
+                url: supabase.storage.from('test-bucket').getPublicUrl(file.name).data.publicUrl,
+                size: file.metadata?.size || 0,
+                created_at: file.created_at
+              }));
+              setGalleryImages(imagesWithUrls);
+            }
+          } catch (error) {
+            console.error('Error refreshing gallery images:', error);
+          }
+        };
+
+        loadGalleryImages();
+
+        // Test if URL is accessible
+        try {
+          const response = await fetch(urlData.publicUrl, { method: 'HEAD' });
+          if (!response.ok) {
+            console.warn("URL may not be accessible yet:", response.status);
+          }
+        } catch (urlTestError) {
+          console.warn("Could not verify URL accessibility:", urlTestError);
+        }
+
+        insertText(`<img src="${urlData.publicUrl}" alt="${file.name}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; display: block;" />`);
+        alert("Image uploaded successfully! URL: " + urlData.publicUrl);
+      } catch (err) {
+        console.error("Unexpected error:", err);
+        alert("Unexpected error during upload: " + err.message + "\n\nCheck:\n1. Supabase connection\n2. Storage bucket permissions\n3. Network connectivity");
+      }
     }
   };
 
   const handlePublish = async () => {
     setSaving(true);
 
-    let error;
-    if (editingBlog) {
-      ({ error } = await supabase.from("blogs").update({
-        title,
-        author,
-        content,
-      }).eq('id', editingBlog.id));
-    } else {
-      ({ error } = await supabase.from("blogs").insert({
-        title,
-        author,
-        content,
-        published: true,
-        created_at: new Date(),
-      }));
-    }
-
-    setSaving(false);
-
-    if (error) {
-      console.error("Error:", error);
-      setMessage("⚠️ Failed to save blog");
-    } else {
-      setMessage(editingBlog ? "✅ Blog updated successfully!" : "✅ Blog published successfully!");
-      if (!editingBlog) {
-        setTitle("");
-        setAuthor("");
-        setContent("");
+    try {
+      let error;
+      if (editingBlog) {
+        ({ error } = await supabase.from("blogs").update({
+          title,
+          author,
+          content,
+        }).eq('id', editingBlog.id));
+      } else {
+        ({ error } = await supabase.from("blogs").insert({
+          title,
+          author,
+          content,
+          published: true,
+          created_at: new Date(),
+        }));
       }
-      onSave && onSave();
+
+      if (error) {
+        console.error("Error saving blog:", error);
+        setMessage("⚠️ Failed to save blog: " + error.message);
+      } else {
+        console.log("Blog saved successfully:", { title, author, content: content.substring(0, 100) + "..." });
+        setMessage(editingBlog ? "✅ Blog updated successfully!" : "✅ Blog published successfully!");
+        if (!editingBlog) {
+          setTitle("");
+          setAuthor("");
+          setContent("");
+        }
+        onSave && onSave();
+      }
+    } catch (err) {
+      console.error("Unexpected error saving blog:", err);
+      setMessage("⚠️ Unexpected error: " + err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -140,8 +282,14 @@ export default function BlogEditor({ editingBlog, onSave }) {
             >
               📝 Paragraph
             </button>
-            <label className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 cursor-pointer">
+            <button
+              onClick={() => setShowImageSelector(!showImageSelector)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
               🖼️ Insert Image
+            </button>
+            <label className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 cursor-pointer">
+              📤 Upload New
               <input
                 type="file"
                 accept="image/*"
@@ -151,6 +299,42 @@ export default function BlogEditor({ editingBlog, onSave }) {
             </label>
           </div>
         </div>
+
+        {/* Image Selector Modal */}
+        {showImageSelector && (
+          <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Select Image from Gallery</h3>
+              <button
+                onClick={() => setShowImageSelector(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-h-60 overflow-y-auto">
+              {galleryImages.map((image, index) => (
+                <div
+                  key={index}
+                  onClick={() => insertImageFromGallery(image.url, image.name)}
+                  className="cursor-pointer border border-gray-200 rounded-lg overflow-hidden hover:border-green-400 transition-colors"
+                >
+                  <img
+                    src={image.url}
+                    alt={image.name}
+                    className="w-full h-20 object-cover"
+                  />
+                  <div className="p-2 text-xs text-gray-600 truncate">
+                    {image.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {galleryImages.length === 0 && (
+              <p className="text-center text-gray-500 py-8">No images in gallery yet. Upload some images first!</p>
+            )}
+          </div>
+        )}
 
         <div className="mb-8">
           <label className="block text-sm font-semibold text-green-800 mb-3">Blog Content</label>

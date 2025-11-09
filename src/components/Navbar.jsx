@@ -9,11 +9,6 @@ const Navbar = () => {
   return (
     <div className='h-16 md:h-20 w-full bg-black/20 backdrop-blur-md border border-white/20 fixed top-0 left-0 z-30 flex rounded-br-2xl rounded-bl-2xl shadow-lg'>
       <div className='flex items-center h-full ml-4 md:ml-10'>
-        <svg className='w-6 h-6 md:w-8 md:h-8 mr-2 md:mr-3' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
-          <path d='M12 2L13.09 8.26L22 9L16.18 13.74L17.27 21L12 17.77L6.73 21L7.82 13.74L2 9L10.91 8.26L12 2Z' fill='white' opacity='0.8'/>
-          <path d='M12 2L13.09 8.26L22 9L16.18 13.74L17.27 21L12 17.77L6.73 21L7.82 13.74L2 9L10.91 8.26L12 2Z' stroke='white' strokeWidth='1'/>
-          <animateTransform attributeName='transform' attributeType='XML' type='rotate' from='0 12 12' to='360 12 12' dur='6s' repeatCount='indefinite'/>
-        </svg>
         <h1 className='text-lg md:text-2xl font-serif text-white heading text-glow navbar-accent'>ZUTHERION BIOVANCE</h1>
       </div>
 

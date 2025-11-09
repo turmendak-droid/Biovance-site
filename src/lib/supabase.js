@@ -15,8 +15,20 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
     })
   }
 } else {
-  supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-  console.log("✅ Supabase connected successfully")
-}
+   supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+     auth: {
+       persistSession: true,
+       autoRefreshToken: true
+     },
+     global: {
+       headers: {
+         'X-Client-Info': 'biovance-admin-panel'
+       }
+     }
+   })
+   console.log("✅ Supabase connected successfully")
+   console.log("🔗 Project URL:", SUPABASE_URL)
+   console.log("🌍 Region: ap-southeast-2 (Sydney)")
+ }
 
 export { supabase }

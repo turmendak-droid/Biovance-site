@@ -12,7 +12,7 @@ const Hero = () => {
         posterSrc="/assets/41308.jpg"
         bgImageSrc="/assets/myanmar_tm5_2004349_lrg.jpg"
         title="INNOVATIVE SCIENCE FOR WILDLIFE CONSERVATION"
-        date="Driving research and global scientific collaboration"
+        date=""
         scrollToExpand="Scroll to Explore"
       >
     </ScrollExpandMedia>

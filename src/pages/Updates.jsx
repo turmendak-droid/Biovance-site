@@ -12,19 +12,26 @@ const Updates = () => {
 
   useEffect(() => {
     const fetchBlogs = async () => {
-      const { data, error } = await supabase
-        .from('blogs')
-        .select('*')
-        .order('created_at', { ascending: false })
+      try {
+        const { data, error } = await supabase
+          .from('blogs')
+          .select('*')
+          .eq('published', true)
+          .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error("❌ Supabase fetch error:", error.message)
+        if (error) {
+          console.error('Error fetching blogs:', error)
+          // If table doesn't exist, show empty state
+          setBlogs([])
+        } else {
+          setBlogs(data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching blogs:', error)
         setBlogs([])
-      } else {
-        console.log("✅ Blogs loaded:", data)
-        setBlogs(data || [])
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     fetchBlogs()
@@ -100,7 +107,7 @@ const Updates = () => {
                   className='bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden'
                 >
                   <img
-                    src={blog.image_url}
+                    src={blog.image_url || '/assets/41308.jpg'}
                     alt={blog.title}
                     className='w-full h-48 object-cover'
                   />

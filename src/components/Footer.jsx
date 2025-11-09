@@ -47,11 +47,6 @@ const Footer = () => {
             viewport={{ once: true }}
           >
             <div className="flex items-center gap-3 mb-4">
-              <svg className='w-8 h-8' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                <path d='M12 2L13.09 8.26L22 9L16.18 13.74L17.27 21L12 17.77L6.73 21L7.82 13.74L2 9L10.91 8.26L12 2Z' fill='currentColor' opacity='0.8'/>
-                <path d='M12 2L13.09 8.26L22 9L16.18 13.74L17.27 21L12 17.77L6.73 21L7.82 13.74L2 9L10.91 8.26L12 2Z' stroke='currentColor' strokeWidth='1'/>
-                <animateTransform attributeName='transform' attributeType='XML' type='rotate' from='0 12 12' to='360 12 12' dur='6s' repeatCount='indefinite'/>
-              </svg>
               <h3 className="text-xl font-semibold font-['Space_Grotesk'] tracking-tight text-green-800">
                 ZUTHERION BIOVANCE
               </h3>
@@ -143,7 +138,7 @@ const Footer = () => {
           className="mt-12 pt-6 border-t border-green-100 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500"
         >
           <div>
-            © 2024 Zutherion Biovance. All rights reserved.
+            © 2025-26 Zutherion Biovance. All rights reserved.
           </div>
           <div className="flex gap-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-green-700 transition-colors">Privacy</a>

@@ -1,5 +1,6 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
 import Navbar from './components/Navbar'
 import Hero from './sections/Hero'
 import Visionsection from './sections/Visionsection'
@@ -7,9 +8,12 @@ import Footer from './components/Footer'
 import AboutUs from './sections/AboutUs'
 import Updates from './pages/Updates'
 import BlogDetail from './pages/BlogDetail'
-import FloatingCard from './components/FloatingCard'
-import Waitlist from './pages/Waitlist'
+import Login from './pages/Login'
 import Admin from './pages/Admin'
+import FloatingCard from './components/FloatingCard'
+import ProtectedRoute from './components/ProtectedRoute'
+import Waitlist from './pages/Waitlist'
+import { supabase } from './lib/supabase'
 
 const Home = () => (
   <div>
@@ -29,13 +33,16 @@ const Home = () => (
 
 const App = () => {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/updates" element={<Updates />} />
-      <Route path="/blogs/:id" element={<BlogDetail />} />
-      <Route path="/admin" element={<Admin />} />
-      <Route path="/waitlist" element={<Waitlist />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/updates" element={<Updates />} />
+        <Route path="/blogs/:id" element={<BlogDetail />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/waitlist" element={<Waitlist />} />
+      </Routes>
+    </AuthProvider>
   )
 }
 
