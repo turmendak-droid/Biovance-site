@@ -1,17 +1,76 @@
-# React + Vite
+# Biovance Site
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern React application for Biovance's AI × Nature × Discovery platform, built with Vite, Tailwind CSS, and Supabase.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🧬 **Admin Dashboard**: Complete content management system
+- 📧 **Email Campaigns**: Automated blog post newsletters
+- 👥 **Waitlist Management**: Real-time subscriber tracking
+- 🖼️ **Media Gallery**: Cloud storage with Supabase
+- 📊 **Analytics**: Real-time stats and insights
 
-## React Compiler
+## Environment Variables
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Create a `.env` file in the root directory with:
 
-## Expanding the ESLint configuration
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_RESEND_API_KEY=your-resend-api-key
+VITE_SUPABASE_WAITLIST_TABLE=waitlist
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-ubyb
+## API Testing
+
+### Test Blog Email Endpoint
+
+To test the blog email endpoint locally:
+
+```bash
+curl -X POST http://localhost:3001/api/sendBlogEmail \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Test Blog Post",
+    "content": "<p>This is a test blog post content.</p>",
+    "author": "Test Author",
+    "featuredImage": "https://example.com/image.jpg",
+    "subscriberEmails": ["test@example.com"]
+  }'
+```
+
+Expected response:
+```json
+{
+  "success": true,
+  "message": "Email sent to 1 subscribers",
+  "stats": {
+    "successful": 1,
+    "failed": 0,
+    "total": 1
+  }
+}
+```
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Deployment
+
+This app is configured for Cloudflare Pages deployment with:
+- Build command: `npm run build`
+- Output directory: `dist`
+- Environment variables set in Cloudflare Pages dashboard
+
+## Tech Stack
+
+- **Frontend**: React 18, Vite, Tailwind CSS
+- **Backend**: Supabase (Database, Auth, Storage)
+- **Email**: Resend API
+- **Deployment**: Cloudflare Pages
+- **State Management**: React Hooks
+- **Real-time**: Supabase subscriptions
