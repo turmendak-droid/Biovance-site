@@ -1,29 +1,9 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { motion } from 'framer-motion'
-import { Mail, ArrowRight, Twitter, Linkedin, Github, Globe } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Twitter, Linkedin, Github, Globe } from 'lucide-react'
 
 const Footer = () => {
-  const [email, setEmail] = useState('')
-  const [isValid, setIsValid] = useState(true)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (validateEmail(email)) {
-      setIsValid(true)
-      setIsSubmitted(true)
-      console.log('Newsletter signup:', email)
-      setEmail('')
-      setTimeout(() => setIsSubmitted(false), 3000)
-    } else {
-      setIsValid(false)
-    }
-  }
 
   return (
     <motion.footer
@@ -48,7 +28,7 @@ const Footer = () => {
           >
             <div className="flex items-center gap-3 mb-4">
               <h3 className="text-xl font-semibold font-['Space_Grotesk'] tracking-tight text-green-800">
-                ZUTHERION BIOVANCE
+                ZYTHERION BIOVANCE
               </h3>
             </div>
 
@@ -72,7 +52,7 @@ const Footer = () => {
             </div>
           </motion.div>
 
-          {/* Newsletter Column */}
+          {/* Mission Column */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -81,45 +61,11 @@ const Footer = () => {
             className="md:text-right"
           >
             <h4 className="text-lg font-semibold font-['Space_Grotesk'] text-green-800 mb-3">
-              Stay Connected
+              Our Mission
             </h4>
             <p className="text-gray-600 text-sm mb-6">
-              Get the latest updates on research, AI initiatives, and ecological intelligence.
+              Harnessing the power of AI to unlock nature's intelligence, driving sustainable solutions for a thriving planet.
             </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="flex md:justify-end gap-2">
-                <div className="relative flex-1 md:max-w-xs">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-600" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value)
-                      if (!isValid) setIsValid(true)
-                    }}
-                    placeholder="Enter your email"
-                    className={`w-full pl-10 pr-4 py-3 bg-white border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all ${
-                      !isValid ? 'border-red-400' : 'border-green-200'
-                    }`}
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-green-700 hover:bg-green-800 text-white rounded-lg hover:scale-105 transition-all flex items-center gap-2 font-medium"
-                >
-                  {isSubmitted ? '✓' : <ArrowRight className="w-4 h-4" />}
-                </button>
-              </div>
-
-              {!isValid && (
-                <p className="text-red-500 text-sm">Please enter a valid email address.</p>
-              )}
-              {isSubmitted && (
-                <p className="text-green-600 text-sm">Thank you for subscribing!</p>
-              )}
-            </form>
 
             <div className="mt-6 pt-6 border-t border-green-100">
               <p className="text-xs text-gray-500">
@@ -138,7 +84,7 @@ const Footer = () => {
           className="mt-12 pt-6 border-t border-green-100 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500"
         >
           <div>
-            © 2025-26 Zutherion Biovance. All rights reserved.
+            © 2025-26 Zytherion Biovance. All rights reserved.
           </div>
           <div className="flex gap-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-green-700 transition-colors">Privacy</a>

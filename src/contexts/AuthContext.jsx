@@ -16,11 +16,27 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Only initialize auth if supabase is properly configured
+    if (!supabase || typeof supabase.auth?.getSession !== 'function') {
+      console.error('❌ Supabase client not properly initialized, skipping auth setup')
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      setLoading(false)
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          console.error('❌ Error getting initial session:', error)
+        }
+        setUser(session?.user ?? null)
+      } catch (err) {
+        console.error('❌ Failed to get initial session:', err)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
 
     getInitialSession()
@@ -28,6 +44,7 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state changed:', event, session?.user?.email || 'no user')
         setUser(session?.user ?? null)
         setLoading(false)
       }

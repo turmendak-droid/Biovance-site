@@ -147,7 +147,7 @@ const Updates = () => {
               Join researchers, organizations, and conservationists worldwide in our mission to protect and restore ecosystems.
             </p>
             <Link
-              to='/'
+              to='/waitlist'
               className='inline-flex items-center gap-2 bg-white text-green-800 px-8 py-3 rounded-lg font-semibold font-["Inter"] hover:bg-green-50 transition-colors shadow-lg'
             >
               Get In Touch

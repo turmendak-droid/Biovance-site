@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
 import { supabase } from "../lib/supabase";
+import { notifyAllMembers } from '../api/sendNotification';
 
 export default function BlogEditor({ editingBlog, onSave }) {
   const [title, setTitle] = useState(editingBlog?.title || "");
@@ -9,14 +14,44 @@ export default function BlogEditor({ editingBlog, onSave }) {
   const [message, setMessage] = useState("");
   const [galleryImages, setGalleryImages] = useState([]);
   const [showImageSelector, setShowImageSelector] = useState(false);
-  const textareaRef = useRef(null);
+  const [isPreview, setIsPreview] = useState(false);
+  const [featuredImage, setFeaturedImage] = useState('');
+  const [sendEmail, setSendEmail] = useState(false);
+  const [sendNotification, setSendNotification] = useState(true);
+  const [testEmail, setTestEmail] = useState('');
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Image.configure({
+        HTMLAttributes: {
+          style: 'max-width: 100%; border-radius: 8px; margin: 10px 0; display: block;',
+        },
+      }),
+      Link.configure({
+        openOnClick: false,
+      }),
+    ],
+    content: content,
+    onUpdate: ({ editor }) => {
+      setContent(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        style: 'min-height: 400px; padding: 16px;',
+      },
+    },
+  });
 
   // Update state when editingBlog changes
   React.useEffect(() => {
     setTitle(editingBlog?.title || "");
     setAuthor(editingBlog?.author || "");
     setContent(editingBlog?.content || "");
-  }, [editingBlog]);
+    if (editor && editingBlog?.content) {
+      editor.commands.setContent(editingBlog.content);
+    }
+  }, [editingBlog, editor]);
 
   // Load gallery images
   useEffect(() => {
@@ -57,129 +92,166 @@ export default function BlogEditor({ editingBlog, onSave }) {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  const insertText = (before, after = "") => {
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-    const newText = before + selectedText + after;
-    const newContent = content.substring(0, start) + newText + content.substring(end);
-    setContent(newContent);
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length);
-    }, 0);
+  const insertImageAtCursor = (imageUrl) => {
+    if (editor) {
+      editor.chain().focus().setImage({ src: imageUrl }).run();
+      console.log('🪄 Image inserted at cursor position');
+    }
   };
 
   const insertImageFromGallery = (imageUrl, imageName) => {
-    insertText(`<img src="${imageUrl}" alt="${imageName}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; display: block;" />`);
+    insertImageAtCursor(imageUrl);
     setShowImageSelector(false);
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      console.log("Uploading file:", file.name, "Size:", file.size, "Type:", file.type);
+  const handleImageUpload = async (file) => {
+    if (!file) return;
 
-      // Check file size (limit to 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File size too large. Please choose an image under 5MB.");
+    console.log('🖼️ Image selected:', file.name);
+
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size too large. Please choose an image under 5MB.");
+      return;
+    }
+
+    try {
+      console.log('☁️ Uploading to Supabase...');
+
+      // Create a clean filename
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `blog-${Date.now()}-${cleanFileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("test-bucket")
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type
+        });
+
+      if (error) {
+        console.error("Upload failed:", error);
+        alert("Image upload failed: " + error.message);
         return;
       }
 
-      try {
-        // Create a clean filename
-        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const fileName = `blog-${Date.now()}-${cleanFileName}`;
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("test-bucket")
+        .getPublicUrl(data.path);
 
-        console.log("Attempting upload to bucket: test-bucket");
-        const { data, error } = await supabase.storage
-          .from("test-bucket")
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false,
-            contentType: file.type
-          });
-
-        if (error) {
-          console.error("Upload failed:", error);
-          console.error("Full error details:", {
-            message: error.message,
-            statusCode: error.statusCode,
-            hint: error.hint,
-            details: error.details,
-            code: error.code
-          });
-
-          // Detect permission/policy issues
-          if (error.statusCode === 403 || error.message?.includes('permission') || error.message?.includes('policy')) {
-            console.error('🔒 PERMISSION BLOCK DETECTED!')
-            console.error('💡 FIX: Create this RLS policy in Supabase SQL Editor:')
-            console.error(`
-CREATE POLICY "Allow authenticated uploads to test-bucket" ON storage.objects
-FOR INSERT TO authenticated
-WITH CHECK (bucket_id = 'test-bucket');
-            `)
-          }
-
-          alert("Image upload failed: " + error.message + "\n\nCheck:\n1. 'test-bucket' bucket exists in Supabase Storage\n2. You have upload permissions\n3. You're logged in as admin");
-          return;
-        }
-
-        console.log("Upload successful:", data);
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from("test-bucket")
-          .getPublicUrl(data.path);
-
-        if (!urlData?.publicUrl) {
-          console.error("Failed to get public URL");
-          alert("Upload succeeded but failed to get image URL");
-          return;
-        }
-
-        console.log("Public URL generated:", urlData.publicUrl);
-
-        // Refresh gallery images to include the new upload
-        const loadGalleryImages = async () => {
-          try {
-            const { data: galleryData, error: galleryError } = await supabase.storage
-              .from('test-bucket')
-              .list('', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
-
-            if (!galleryError) {
-              const imagesWithUrls = galleryData.map(file => ({
-                name: file.name,
-                url: supabase.storage.from('test-bucket').getPublicUrl(file.name).data.publicUrl,
-                size: file.metadata?.size || 0,
-                created_at: file.created_at
-              }));
-              setGalleryImages(imagesWithUrls);
-            }
-          } catch (error) {
-            console.error('Error refreshing gallery images:', error);
-          }
-        };
-
-        loadGalleryImages();
-
-        // Test if URL is accessible
-        try {
-          const response = await fetch(urlData.publicUrl, { method: 'HEAD' });
-          if (!response.ok) {
-            console.warn("URL may not be accessible yet:", response.status);
-          }
-        } catch (urlTestError) {
-          console.warn("Could not verify URL accessibility:", urlTestError);
-        }
-
-        insertText(`<img src="${urlData.publicUrl}" alt="${file.name}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; display: block;" />`);
-        alert("Image uploaded successfully! URL: " + urlData.publicUrl);
-      } catch (err) {
-        console.error("Unexpected error:", err);
-        alert("Unexpected error during upload: " + err.message + "\n\nCheck:\n1. Supabase connection\n2. Storage bucket permissions\n3. Network connectivity");
+      if (!urlData?.publicUrl) {
+        console.error("Failed to get public URL");
+        alert("Upload succeeded but failed to get image URL");
+        return;
       }
+
+      // Insert image at cursor position
+      insertImageAtCursor(urlData.publicUrl);
+
+      console.log('✅ Uploaded successfully:', urlData.publicUrl);
+      alert("Image uploaded and inserted successfully!");
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      alert("Unexpected error during upload: " + err.message);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    if (!testEmail) return;
+
+    try {
+      console.log('📧 Sending test email to:', testEmail);
+
+      const response = await fetch('/api/sendBlogEmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          content,
+          author,
+          featuredImage,
+          subscriberEmails: [testEmail]
+        })
+      });
+
+      if (!response.ok) {
+        // Try to get text for debugging if JSON fails
+        let errorMessage = 'Unknown error';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || `HTTP ${response.status}`;
+        } catch (jsonError) {
+          // If JSON parsing fails, get text response
+          const textResponse = await response.text();
+          console.error('❌ Server returned non-JSON response:', response.status, textResponse);
+          errorMessage = `Server error (${response.status}): ${textResponse.substring(0, 100)}...`;
+        }
+        console.error('❌ Failed to send test email:', errorMessage);
+        alert(`❌ Failed to send test email: ${errorMessage}`);
+        return;
+      }
+
+      // Safe JSON parsing
+      const result = await response.json();
+      console.log('✅ Test email sent successfully:', result);
+      alert(`✅ Test email sent to ${testEmail}! Check your inbox.`);
+    } catch (error) {
+      console.error('💥 Unexpected error sending test email:', error);
+      alert('❌ Unexpected error sending test email: ' + error.message);
+    }
+  };
+
+  const handleFeaturedImageUpload = async (file) => {
+    if (!file) return;
+
+    console.log('🖼️ Featured image selected:', file.name);
+
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size too large. Please choose an image under 5MB.");
+      return;
+    }
+
+    try {
+      console.log('☁️ Uploading featured image to Supabase...');
+
+      // Create a clean filename
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `featured-${Date.now()}-${cleanFileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("test-bucket")
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type
+        });
+
+      if (error) {
+        console.error("Featured image upload failed:", error);
+        alert("Featured image upload failed: " + error.message);
+        return;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("test-bucket")
+        .getPublicUrl(data.path);
+
+      if (!urlData?.publicUrl) {
+        console.error("Failed to get featured image URL");
+        alert("Upload succeeded but failed to get image URL");
+        return;
+      }
+
+      setFeaturedImage(urlData.publicUrl);
+      console.log('✅ Featured image uploaded successfully:', urlData.publicUrl);
+      alert("Featured image uploaded successfully!");
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      alert("Unexpected error during featured image upload: " + err.message);
     }
   };
 
@@ -188,35 +260,128 @@ WITH CHECK (bucket_id = 'test-bucket');
 
     try {
       let error;
+      let blogId;
+
       if (editingBlog) {
         ({ error } = await supabase.from("blogs").update({
           title,
           author,
           content,
+          featured_image: featuredImage,
         }).eq('id', editingBlog.id));
+        blogId = editingBlog.id;
       } else {
-        ({ error } = await supabase.from("blogs").insert({
+        const { data, error: insertError } = await supabase.from("blogs").insert({
           title,
           author,
           content,
+          featured_image: featuredImage,
           published: true,
           created_at: new Date(),
-        }));
+        }).select('id').single();
+
+        error = insertError;
+        blogId = data?.id;
       }
 
       if (error) {
         console.error("Error saving blog:", error);
         setMessage("⚠️ Failed to save blog: " + error.message);
-      } else {
-        console.log("Blog saved successfully:", { title, author, content: content.substring(0, 100) + "..." });
-        setMessage(editingBlog ? "✅ Blog updated successfully!" : "✅ Blog published successfully!");
-        if (!editingBlog) {
-          setTitle("");
-          setAuthor("");
-          setContent("");
-        }
-        onSave && onSave();
+        return;
       }
+
+      console.log("Blog saved successfully:", { title, author, content: content.substring(0, 100) + "..." });
+
+      // Send email newsletter if requested
+      if (sendEmail) {
+        try {
+          console.log("📧 Sending email newsletter...");
+
+          // Get subscriber emails (you'll need to implement this based on your subscriber table)
+          const { data: subscribers, error: subError } = await supabase
+            .from('newsletter_subscribers')
+            .select('email')
+            .eq('subscribed', true);
+
+          if (subError) {
+            console.warn("Could not fetch subscribers:", subError);
+          }
+
+          if (subscribers && subscribers.length > 0) {
+            // Send email newsletter
+            const response = await fetch('/api/sendBlogEmail', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title,
+                content,
+                author,
+                featuredImage,
+                subscriberEmails: subscribers.map(s => s.email)
+              })
+            });
+
+            if (!response.ok) {
+              let errorMessage = 'Unknown error';
+              try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || `HTTP ${response.status}`;
+              } catch (jsonError) {
+                const textResponse = await response.text();
+                console.error('❌ Newsletter server returned non-JSON:', response.status, textResponse);
+                errorMessage = `Server error (${response.status}): ${textResponse.substring(0, 100)}...`;
+              }
+              console.error("❌ Failed to send email newsletter:", errorMessage);
+              setMessage(prev => prev + " ⚠️ Blog saved but newsletter failed: " + errorMessage);
+            } else {
+              const result = await response.json();
+              console.log("✅ Email newsletter sent successfully:", result);
+              setMessage(prev => prev + " 📧 Newsletter sent to " + result.stats.successful + " subscribers!");
+            }
+          } else {
+            console.log("📧 No subscribers found, skipping newsletter send");
+          }
+        } catch (emailError) {
+          console.error("Error sending newsletter:", emailError);
+          // Don't fail the blog publish if email fails
+        }
+      }
+
+      // Send member notifications if requested
+      if (sendNotification) {
+        try {
+          console.log("🔔 Sending member notifications...");
+
+          const notificationResult = await notifyAllMembers({
+            title,
+            content,
+            featured_image: featuredImage,
+            author
+          });
+
+          if (notificationResult.success) {
+            console.log("✅ Member notifications sent successfully:", notificationResult);
+            setMessage(prev => prev + " 🔔 Notifications sent to " + notificationResult.successful + " members!");
+          } else {
+            console.warn("⚠️ Some member notifications failed:", notificationResult);
+            setMessage(prev => prev + " ⚠️ Blog saved but some notifications failed: " + notificationResult.message);
+          }
+        } catch (notificationError) {
+          console.error("Error sending member notifications:", notificationError);
+          setMessage(prev => prev + " ⚠️ Blog saved but notifications failed: " + notificationError.message);
+        }
+      }
+
+      setMessage(editingBlog ? "✅ Blog updated successfully!" : "✅ Blog published successfully!");
+      if (!editingBlog) {
+        setTitle("");
+        setAuthor("");
+        setContent("");
+        setFeaturedImage("");
+        setSendEmail(false);
+        setSendNotification(true); // Reset to default
+      }
+      onSave && onSave();
     } catch (err) {
       console.error("Unexpected error saving blog:", err);
       setMessage("⚠️ Unexpected error: " + err.message);
@@ -262,43 +427,195 @@ WITH CHECK (bucket_id = 'test-bucket');
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-green-800 mb-3">Formatting Toolbar</label>
-          <div className="flex flex-wrap gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-            <button
-              onClick={() => insertText("<h1>", "</h1>")}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              📰 H1 Heading
-            </button>
-            <button
-              onClick={() => insertText("<h2>", "</h2>")}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              📄 H2 Subheading
-            </button>
-            <button
-              onClick={() => insertText("<p>", "</p>")}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              📝 Paragraph
-            </button>
-            <button
-              onClick={() => setShowImageSelector(!showImageSelector)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              🖼️ Insert Image
-            </button>
+          <label className="block text-sm font-semibold text-green-800 mb-2">Featured Image (for Email)</label>
+          <div className="flex gap-4 items-center">
             <label className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 cursor-pointer">
-              📤 Upload New
+              📷 Upload Featured Image
               <input
                 type="file"
                 accept="image/*"
-                onChange={handleImageUpload}
+                onChange={(e) => handleFeaturedImageUpload(e.target.files[0])}
                 className="hidden"
               />
             </label>
+            {featuredImage && (
+              <div className="flex items-center gap-2">
+                <img src={featuredImage} alt="Featured" className="w-16 h-16 object-cover rounded-lg border-2 border-green-200" />
+                <span className="text-sm text-gray-600">Featured image set</span>
+              </div>
+            )}
           </div>
         </div>
+
+        <div className="mb-6 space-y-4">
+          <div>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={sendEmail}
+                onChange={(e) => setSendEmail(e.target.checked)}
+                className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+              />
+              <span className="text-sm font-semibold text-green-800">Send as Email Newsletter</span>
+            </label>
+            <p className="text-xs text-gray-600 mt-1">Send this blog post as a styled email to newsletter subscribers</p>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={sendNotification}
+                onChange={(e) => setSendNotification(e.target.checked)}
+                className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+              />
+              <span className="text-sm font-semibold text-green-800">Send Notification to Members</span>
+            </label>
+            <p className="text-xs text-gray-600 mt-1">Send a notification email to all Biovance members about this new blog post</p>
+          </div>
+
+          <div className="border-t border-gray-200 pt-4">
+            <label className="block text-sm font-semibold text-green-800 mb-2">Test Email Preview</label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="your-email@example.com"
+                className="flex-1 border-2 border-green-200 p-3 rounded-xl focus:ring-4 focus:ring-green-300 focus:border-green-400 transition-all text-sm"
+              />
+              <button
+                onClick={handleSendTestEmail}
+                disabled={!testEmail || saving}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-xl transition-all shadow-md hover:shadow-lg font-semibold disabled:cursor-not-allowed transform hover:-translate-y-0.5"
+              >
+                📧 Send Test
+              </button>
+            </div>
+            <p className="text-xs text-gray-600 mt-1">Send a preview of this blog email to yourself before publishing</p>
+          </div>
+        </div>
+
+        {/* Rich Text Editor */}
+        <div className="mb-8">
+          <label className="block text-sm font-semibold text-green-800 mb-3">Blog Content</label>
+          <div className="bg-white rounded-xl border border-green-200 overflow-hidden shadow-lg">
+            <div className="flex border-b border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setIsPreview(false)}
+                className={`px-6 py-3 text-sm font-medium transition-colors ${!isPreview ? 'bg-green-100 text-green-800 border-b-2 border-green-500' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'}`}
+              >
+                ✏️ Write
+              </button>
+              <button
+                onClick={() => setIsPreview(true)}
+                className={`px-6 py-3 text-sm font-medium transition-colors ${isPreview ? 'bg-green-100 text-green-800 border-b-2 border-green-500' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'}`}
+              >
+                👁️ Preview
+              </button>
+            </div>
+
+            {!isPreview ? (
+              <div className="relative">
+                {/* Enhanced Toolbar */}
+                <div className="flex flex-wrap gap-2 p-4 border-b border-gray-200 bg-white">
+                  <button
+                    onClick={() => editor?.chain().focus().toggleBold().run()}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${editor?.isActive('bold') ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    title="Bold"
+                  >
+                    <strong>B</strong>
+                  </button>
+                  <button
+                    onClick={() => editor?.chain().focus().toggleItalic().run()}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${editor?.isActive('italic') ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    title="Italic"
+                  >
+                    <em>I</em>
+                  </button>
+                  <button
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${editor?.isActive('heading', { level: 1 }) ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    title="Heading 1"
+                  >
+                    H1
+                  </button>
+                  <button
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${editor?.isActive('heading', { level: 2 }) ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    title="Heading 2"
+                  >
+                    H2
+                  </button>
+                  <button
+                    onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${editor?.isActive('bulletList') ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    title="Bullet List"
+                  >
+                    • List
+                  </button>
+                  <button
+                    onClick={() => {
+                      const url = window.prompt('Enter URL:');
+                      if (url) {
+                        editor?.chain().focus().setLink({ href: url }).run();
+                      }
+                    }}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${editor?.isActive('link') ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    title="Add Link"
+                  >
+                    🔗 Link
+                  </button>
+                  <label className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-all shadow-md hover:shadow-lg" title="Insert Image">
+                    📷 Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e.target.files[0])}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* Editor with better styling */}
+                <EditorContent
+                  editor={editor}
+                  className="min-h-[500px] p-6 prose prose-lg max-w-none focus:outline-none"
+                  style={{
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    lineHeight: '1.7',
+                    fontSize: '16px'
+                  }}
+                />
+              </div>
+            ) : (
+              /* Enhanced Preview Mode */
+              <div className="min-h-[500px] p-6 bg-gray-50">
+                <div className="max-w-4xl mx-auto">
+                  {featuredImage && (
+                    <img
+                      src={featuredImage}
+                      alt="Featured"
+                      className="w-full max-h-64 object-cover rounded-lg mb-6 shadow-md"
+                    />
+                  )}
+                  <h1 className="text-3xl font-bold text-gray-900 mb-4">{title || 'Blog Title'}</h1>
+                  <p className="text-gray-600 mb-6">By {author || 'Author'} • {new Date().toLocaleDateString()}</p>
+                  <div
+                    className="prose prose-lg max-w-none"
+                    style={{
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      lineHeight: '1.8',
+                      color: '#374151'
+                    }}
+                    dangerouslySetInnerHTML={{ __html: content }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
 
         {/* Image Selector Modal */}
         {showImageSelector && (
@@ -335,18 +652,6 @@ WITH CHECK (bucket_id = 'test-bucket');
             )}
           </div>
         )}
-
-        <div className="mb-8">
-          <label className="block text-sm font-semibold text-green-800 mb-3">Blog Content</label>
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Start writing your amazing blog post... Use the toolbar above to format text and add images!"
-            rows={12}
-            className="w-full border-2 border-green-200 p-6 rounded-xl focus:ring-4 focus:ring-green-300 focus:border-green-400 transition-all shadow-sm resize-vertical min-h-[300px] bg-white"
-          />
-        </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-end">
           {editingBlog && (

@@ -9,7 +9,7 @@ const Navbar = () => {
   return (
     <div className='h-16 md:h-20 w-full bg-black/20 backdrop-blur-md border border-white/20 fixed top-0 left-0 z-30 flex rounded-br-2xl rounded-bl-2xl shadow-lg'>
       <div className='flex items-center h-full ml-4 md:ml-10'>
-        <h1 className='text-lg md:text-2xl font-serif text-white heading text-glow navbar-accent'>ZUTHERION BIOVANCE</h1>
+        <h1 className='text-lg md:text-2xl font-serif text-white heading text-glow navbar-accent'>ZYTHERION BIOVANCE</h1>
       </div>
 
       {/* Desktop Menu */}

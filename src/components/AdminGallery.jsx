@@ -285,58 +285,59 @@ WITH CHECK (bucket_id = 'test-bucket');
   }
 
   const handleDeleteImage = async (imageName) => {
-    if (!confirm('Are you sure you want to delete this image?')) return
+    if (!confirm(`Are you sure you want to delete "${imageName}"?`)) return;
 
     try {
-      console.log(`🗑️ Deleting image: ${imageName}`)
+      console.log("🗑️ Deletion started for:", imageName);
 
-      // Check auth before delete
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      if (userError || !userData.user) {
-        console.error('❌ Auth check failed for delete:', userError || 'No user session')
-        alert('❌ Please log in as admin before deleting images.')
-        return
-      }
-      console.log('✅ User authenticated for delete:', userData.user.email)
-
-      const { error } = await supabase.storage
+      // 1️⃣ Fetch all files from Supabase root
+      const { data: allFiles, error: listError } = await supabase.storage
         .from('test-bucket')
-        .remove([imageName])
+        .list('', { limit: 1000 });
 
-      if (error) {
-        console.error('❌ Delete failed for', imageName, ':', error)
-        console.error('Full error details:', {
-          message: error.message,
-          statusCode: error.statusCode,
-          hint: error.hint,
-          details: error.details,
-          code: error.code
-        })
-
-        // Detect permission/policy issues
-        if (error.statusCode === 403 || error.message?.includes('permission') || error.message?.includes('policy')) {
-          console.error('🔒 PERMISSION BLOCK DETECTED for delete operation!')
-          console.error('💡 FIX: Create this RLS policy in Supabase SQL Editor:')
-          console.error(`
-CREATE POLICY "Allow authenticated users to delete from test-bucket" ON storage.objects
-FOR DELETE TO authenticated
-USING (bucket_id = 'test-bucket');
-          `)
-        }
-
-        alert(`❌ Failed to delete image: ${error.message}`)
-        return
+      if (listError) {
+        console.error('❌ Failed to list files:', listError);
+        alert('Error fetching files before deletion.');
+        return;
       }
 
-      console.log('✅ Image deleted successfully:', imageName)
-      alert('✅ Image deleted successfully!')
-      setImages(images.filter(img => img.name !== imageName))
-      if (selectedImage?.name === imageName) {
-        setSelectedImage(null)
+      console.log("📦 Files found in bucket:", allFiles.map(f => f.name));
+
+      // 2️⃣ Match filename ignoring accidental folder mismatch
+      const targetFile = allFiles.find(f => f.name === imageName);
+
+      if (!targetFile) {
+        alert(`❌ File "${imageName}" not found in bucket.`);
+        console.warn("⚠️ File not found in bucket:", imageName);
+        return;
       }
+
+      const filePath = targetFile.name;
+      console.log("✅ Confirmed file path to delete:", filePath);
+
+      // 3️⃣ Delete exact file path
+      const { error: deleteError } = await supabase.storage
+        .from('test-bucket')
+        .remove([filePath]);
+
+      if (deleteError) {
+        console.error("❌ Delete failed:", deleteError);
+        alert("Error deleting file: " + deleteError.message);
+        return;
+      }
+
+      console.log("✅ File deleted from Supabase:", filePath);
+
+      // 4️⃣ Wait for Supabase to sync
+      await new Promise((r) => setTimeout(r, 1500));
+
+      // 5️⃣ Refresh gallery
+      await fetchGalleryImages();
+
+      alert("✅ Image deleted successfully and gallery refreshed!");
     } catch (err) {
-      console.error('💥 Unexpected error deleting', imageName, ':', err)
-      alert('💥 Unexpected error deleting image')
+      console.error("💥 Unexpected error deleting file:", err);
+      alert("Unexpected error: " + err.message);
     }
   }
 

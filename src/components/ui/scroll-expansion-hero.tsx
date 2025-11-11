@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 
 interface ScrollExpandMediaProps {
   mediaType?: 'video' | 'image';
@@ -37,6 +37,17 @@ const ScrollExpandMedia = ({
   const [isMobileState, setIsMobileState] = useState(false);
 
   const sectionRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"]
+  });
+
+  // Smooth scroll-based transforms
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+  const backgroundY = useTransform(smoothProgress, [0, 1], ['0%', '30%']);
+  const textOpacity = useTransform(smoothProgress, [0, 0.3, 0.6], [1, 0.8, 0.3]);
+  const textScale = useTransform(smoothProgress, [0, 0.5], [1, 0.95]);
+  const textY = useTransform(smoothProgress, [0, 1], ['0%', '20%']);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -200,9 +211,18 @@ const ScrollExpandMedia = ({
   return (
     <div
       ref={sectionRef}
-      className='transition-colors duration-700 ease-in-out overflow-x-hidden bg-cover bg-center'
-      style={{ backgroundImage: `url(${bgImageSrc})` }}
+      className='transition-colors duration-700 ease-in-out overflow-x-hidden bg-cover bg-center scrollbar-hide'
+      style={{
+        backgroundImage: `url(${bgImageSrc})`,
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
+      }}
     >
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       <section className='relative flex flex-col items-center justify-start min-h-screen mt-32'>
         <div className='relative w-full flex flex-col items-center min-h-[100dvh]'>
           <motion.div
@@ -210,6 +230,7 @@ const ScrollExpandMedia = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 - scrollProgress }}
             transition={{ duration: 0.1 }}
+            style={{ y: backgroundY }}
           >
             <img
               src={bgImageSrc}
@@ -308,7 +329,12 @@ const ScrollExpandMedia = ({
                   </div>
                 )}
 
-                <div className='flex flex-col items-center text-center relative z-10 mt-4 transition-none'>
+                <motion.div
+                  className='flex flex-col items-center text-center relative z-10 mt-4 transition-none'
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.8 }}
+                >
                   {date && (
                     <p
                       className='text-2xl text-white'
@@ -318,34 +344,57 @@ const ScrollExpandMedia = ({
                     </p>
                   )}
                   {scrollToExpand && (
-                    <p
+                    <motion.p
                       className='text-white font-medium text-center'
                       style={{ transform: `translateX(${textTranslateX}vw)` }}
+                      animate={{
+                        textShadow: [
+                          '0 0 5px rgba(255,255,255,0.5)',
+                          '0 0 20px rgba(255,255,255,0.8)',
+                          '0 0 5px rgba(255,255,255,0.5)'
+                        ]
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: 'easeInOut'
+                      }}
                     >
-                      {scrollToExpand}
-                    </p>
+                      {scrollToExpand} ↓
+                    </motion.p>
                   )}
-                </div>
+                </motion.div>
               </div>
 
-              <div
+              <motion.div
                 className={`flex items-center justify-center text-center gap-4 w-full relative z-10 transition-none flex-col ${
                   textBlend ? 'mix-blend-difference' : 'mix-blend-normal'
                 }`}
+                style={{
+                  opacity: textOpacity,
+                  scale: textScale,
+                  y: textY
+                }}
               >
                 <motion.h2
                   className='text-4xl md:text-5xl lg:text-6xl font-bold text-white transition-none'
                   style={{ transform: `translateX(-${textTranslateX}vw)` }}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
                 >
                   {firstWord}
                 </motion.h2>
                 <motion.h2
                   className='text-4xl md:text-5xl lg:text-6xl font-bold text-center text-white transition-none'
                   style={{ transform: `translateX(${textTranslateX}vw)` }}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.6 }}
                 >
                   {restOfTitle}
                 </motion.h2>
-              </div>
+              </motion.div>
             </div>
 
             <motion.section

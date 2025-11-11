@@ -55,11 +55,34 @@ const Admin = () => {
           mediaCount = 0
         }
 
-        // For now, keep newsletter and waitlist as demo data since we don't have those tables
+        // Fetch newsletter subscribers count
+        let newsletterCount = 0
+        try {
+          const { count: newsletterSubsCount } = await supabase
+            .from('newsletter_subscribers')
+            .select('*', { count: 'exact', head: true })
+          newsletterCount = newsletterSubsCount || 0
+        } catch (error) {
+          console.warn('Newsletter subscribers table not found, using 0 count')
+          newsletterCount = 0
+        }
+
+        // Fetch waitlist count
+        let waitlistCount = 0
+        try {
+          const { count: waitlistSubsCount } = await supabase
+            .from('waitlist')
+            .select('*', { count: 'exact', head: true })
+          waitlistCount = waitlistSubsCount || 0
+        } catch (error) {
+          console.warn('Waitlist table not found, using 0 count')
+          waitlistCount = 0
+        }
+
         setStats({
           totalBlogs: blogsCountValue,
-          newsletterSubs: 156, // demo
-          waitlist: 89, // demo
+          newsletterSubs: newsletterCount,
+          waitlist: waitlistCount,
           mediaFiles: mediaCount
         })
       } catch (error) {
@@ -67,8 +90,8 @@ const Admin = () => {
         // Set default values on error
         setStats({
           totalBlogs: 0,
-          newsletterSubs: 156,
-          waitlist: 89,
+          newsletterSubs: 0,
+          waitlist: 0,
           mediaFiles: 0
         })
       }
@@ -139,6 +162,7 @@ const Admin = () => {
                 { id: 'overview', label: 'Overview', icon: BarChart3 },
                 { id: 'blogs', label: 'Blog Writing', icon: FileText },
                 { id: 'users', label: 'Users & Members', icon: Users },
+                { id: 'waitlist', label: 'Waitlist', icon: Users },
                 { id: 'gallery', label: 'Media Gallery', icon: Image },
                 { id: 'settings', label: 'Settings', icon: Settings }
               ].map((tab) => (
@@ -271,6 +295,79 @@ const Admin = () => {
                         <p className='text-sm'>Waitlist integration coming soon</p>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'waitlist' && (
+            <div className='space-y-8'>
+              <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-200'>
+                <div className='flex items-center justify-between mb-6'>
+                  <h2 className='text-2xl font-bold text-gray-900'>Waitlist Management</h2>
+                  <Link
+                    to="/admin/waitlist"
+                    className='bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2'
+                  >
+                    📋 View Full Waitlist
+                  </Link>
+                </div>
+                <p className='text-gray-600 mb-6'>Monitor and manage waitlist registrations. Click "View Full Waitlist" for detailed management.</p>
+
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+                  <div className='bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200'>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <p className='text-sm font-medium text-purple-700'>Total Signups</p>
+                        <p className='text-3xl font-bold text-purple-900'>{stats.waitlist}</p>
+                      </div>
+                      <Users className='w-10 h-10 text-purple-600' />
+                    </div>
+                  </div>
+
+                  <div className='bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200'>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <p className='text-sm font-medium text-green-700'>This Month</p>
+                        <p className='text-3xl font-bold text-green-900'>--</p>
+                      </div>
+                      <BarChart3 className='w-10 h-10 text-green-600' />
+                    </div>
+                  </div>
+
+                  <div className='bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200'>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <p className='text-sm font-medium text-blue-700'>Conversion Rate</p>
+                        <p className='text-3xl font-bold text-blue-900'>--</p>
+                      </div>
+                      <Settings className='w-10 h-10 text-blue-600' />
+                    </div>
+                  </div>
+                </div>
+
+                <div className='mt-8'>
+                  <h3 className='text-lg font-semibold text-gray-800 mb-4'>Quick Actions</h3>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                    <Link
+                      to="/admin/waitlist"
+                      className='bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg transition-colors flex items-center gap-3'
+                    >
+                      <Users className='w-5 h-5' />
+                      <div>
+                        <div className='font-semibold'>View All Entries</div>
+                        <div className='text-sm opacity-90'>Detailed waitlist management</div>
+                      </div>
+                    </Link>
+
+                    <button className='bg-green-600 hover:bg-green-700 text-white p-4 rounded-lg transition-colors flex items-center gap-3'>
+                      <FileText className='w-5 h-5' />
+                      <div>
+                        <div className='font-semibold'>Export Data</div>
+                        <div className='text-sm opacity-90'>Download CSV file</div>
+                      </div>
+                    </button>
                   </div>
                 </div>
               </div>
