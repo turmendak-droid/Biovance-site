@@ -176,26 +176,24 @@ export default function BlogEditor({ editingBlog, onSave }) {
         })
       });
 
+      // ✅ Only read the response once
+      const text = await response.text();
+
       if (!response.ok) {
-        // Try to get text for debugging if JSON fails
-        let errorMessage = 'Unknown error';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || `HTTP ${response.status}`;
-        } catch (jsonError) {
-          // If JSON parsing fails, get text response
-          const textResponse = await response.text();
-          console.error('❌ Server returned non-JSON response:', response.status, textResponse);
-          errorMessage = `Server error (${response.status}): ${textResponse.substring(0, 100)}...`;
-        }
-        console.error('❌ Failed to send test email:', errorMessage);
-        alert(`❌ Failed to send test email: ${errorMessage}`);
+        console.error('💥 Error:', text);
+        alert(`❌ Failed to send test email: Server responded with ${response.status} - ${text}`);
         return;
       }
 
-      // Safe JSON parsing
-      const result = await response.json();
-      console.log('✅ Test email sent successfully:', result);
+      // ✅ Try to parse JSON safely
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
+
+      console.log('✅ Test email sent successfully:', data);
       alert(`✅ Test email sent to ${testEmail}! Check your inbox.`);
     } catch (error) {
       console.error('💥 Unexpected error sending test email:', error);
@@ -321,22 +319,22 @@ export default function BlogEditor({ editingBlog, onSave }) {
               })
             });
 
+            // ✅ Only read the response once
+            const text = await response.text();
+
             if (!response.ok) {
-              let errorMessage = 'Unknown error';
-              try {
-                const errorData = await response.json();
-                errorMessage = errorData.error || `HTTP ${response.status}`;
-              } catch (jsonError) {
-                const textResponse = await response.text();
-                console.error('❌ Newsletter server returned non-JSON:', response.status, textResponse);
-                errorMessage = `Server error (${response.status}): ${textResponse.substring(0, 100)}...`;
-              }
-              console.error("❌ Failed to send email newsletter:", errorMessage);
-              setMessage(prev => prev + " ⚠️ Blog saved but newsletter failed: " + errorMessage);
+              console.error('❌ Newsletter server returned error:', response.status, text);
+              setMessage(prev => prev + " ⚠️ Blog saved but newsletter failed: Server responded with " + response.status + " - " + text);
             } else {
-              const result = await response.json();
+              // ✅ Try to parse JSON safely
+              let result;
+              try {
+                result = JSON.parse(text);
+              } catch {
+                result = text;
+              }
               console.log("✅ Email newsletter sent successfully:", result);
-              setMessage(prev => prev + " 📧 Newsletter sent to " + result.stats.successful + " subscribers!");
+              setMessage(prev => prev + " 📧 Newsletter sent to " + (result.stats?.successful || 'multiple') + " subscribers!");
             }
           } else {
             console.log("📧 No subscribers found, skipping newsletter send");
