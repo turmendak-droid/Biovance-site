@@ -168,11 +168,12 @@ export default function BlogEditor({ editingBlog, onSave }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          to: testEmail,
+          subject: `🧬 ${title}`,
           title,
-          content,
-          author,
+          excerpt: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
           featuredImage,
-          subscriberEmails: [testEmail]
+          url: `${window.location.origin}/updates`
         })
       });
 
@@ -311,11 +312,12 @@ export default function BlogEditor({ editingBlog, onSave }) {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
+                to: subscribers.map(s => s.email).join(','),
+                subject: `🧬 ${title}`,
                 title,
-                content,
-                author,
+                excerpt: content.replace(/<[^>]*>/g, '').substring(0, 300) + (content.length > 300 ? '...' : ''),
                 featuredImage,
-                subscriberEmails: subscribers.map(s => s.email)
+                url: `${window.location.origin}/updates`
               })
             });
 
