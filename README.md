@@ -52,7 +52,7 @@ Expected response:
 }
 ```
 
-## Developmen
+## Development
 
 ```bash
 npm install
