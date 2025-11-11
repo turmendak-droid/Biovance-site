@@ -1,8 +1,7 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY);
-
 export async function onRequestPost({ request, env }) {
+  const resend = new Resend(env.RESEND_API_KEY);
   try {
     // Check if request method is POST
     if (request.method !== 'POST') {
@@ -49,8 +48,8 @@ export async function onRequestPost({ request, env }) {
     }
 
     // Check if Resend API key is configured
-    if (!process.env.RESEND_API_KEY && !process.env.VITE_RESEND_API_KEY) {
-      console.error('❌ RESEND_API_KEY or VITE_RESEND_API_KEY not configured');
+    if (!env.RESEND_API_KEY) {
+      console.error('❌ RESEND_API_KEY not configured');
       return new Response(JSON.stringify({
         error: 'Email service not configured'
       }), {
@@ -116,7 +115,7 @@ export async function onRequestPost({ request, env }) {
                         <p style="margin: 0 0 10px 0;">© 2024 Biovance. All rights reserved.</p>
                         <p style="margin: 0; font-size: 12px;">
                           You're receiving this because you're subscribed to our newsletter.
-                          <a href="${process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://biovance-site.pages.dev'}/unsubscribe" style="color: #0B593E; text-decoration: underline;">Unsubscribe</a>
+                          <a href="${env.SITE_URL || 'https://biovance-site.pages.dev'}/unsubscribe" style="color: #0B593E; text-decoration: underline;">Unsubscribe</a>
                         </p>
                       </div>
                     </td>
