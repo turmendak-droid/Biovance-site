@@ -57,12 +57,18 @@ Expected response:
    npm install -g wrangler
    ```
 
-2. **Run local dev server**:
+2. **Run local functions server** (Terminal 1):
    ```bash
-   wrangler dev functions/sendBlogEmail.js --port 8788
+   npm run functions:dev
+   ```
+   This runs: `wrangler pages dev . --port 8788`
+
+3. **Run Vite dev server** (Terminal 2):
+   ```bash
+   npm run dev
    ```
 
-3. **Test the API**:
+4. **Test the API**:
    - Frontend calls: `fetch('/api/sendBlogEmail')` → proxied to `http://localhost:8788/sendBlogEmail`
    - Direct calls: `http://localhost:8788/sendBlogEmail`
 

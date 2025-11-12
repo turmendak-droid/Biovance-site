@@ -181,3 +181,28 @@ export async function onRequestOptions() {
     },
   });
 }
+
+// Default export to handle all methods (fallback)
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const method = request.method;
+
+    console.log(`📧 Function called: ${method} ${url.pathname}`);
+
+    // Route to appropriate handler
+    if (method === 'POST') {
+      return onRequestPost({ request, env });
+    } else if (method === 'OPTIONS') {
+      return onRequestOptions();
+    } else {
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+        status: 405,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
+};

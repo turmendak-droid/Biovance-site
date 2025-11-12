@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "functions:dev": "wrangler dev functions/sendBlogEmail.js --port 8788"
+    "functions:dev": "wrangler pages dev . --port 8788"
   },
   "dependencies": {
     "@blocknote/core": "^0.41.1",
