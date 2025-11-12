@@ -34,14 +34,14 @@ const retryWithBackoff = async (fn, maxRetries = 3, baseDelay = 1000) => {
   }
 };
 
-export const useWaitlistData = () => {
+export const useWaitlistData = (initialPage = 1, initialSearch = '', initialCountry = '') => {
   const [allEntries, setAllEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [countryFilter, setCountryFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [countryFilter, setCountryFilter] = useState(initialCountry);
   const [subscriptionStatus, setSubscriptionStatus] = useState('active');
 
   // Calculate stats

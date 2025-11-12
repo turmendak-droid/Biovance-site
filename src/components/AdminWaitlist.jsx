@@ -1,31 +1,78 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useWaitlistData } from '../hooks/useWaitlistData';
 
+// Utility to get/set localStorage with JSON parsing
+const useLocalStorage = (key, defaultValue) => {
+  const [value, setValue] = useState(() => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  });
+
+  const setStoredValue = (newValue) => {
+    try {
+      setValue(newValue);
+      localStorage.setItem(key, JSON.stringify(newValue));
+    } catch (error) {
+      console.warn('Failed to save to localStorage:', error);
+    }
+  };
+
+  return [value, setStoredValue];
+};
+
 // Optimized table row component with React.memo
-const WaitlistTableRow = React.memo(({ entry, index, formatDate, sanitizeText, shimmerLoading }) => (
-  <tr className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-green-50 transition-colors ${shimmerLoading ? 'animate-pulse' : ''}`}>
-    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-      {index}
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-      {sanitizeText(entry.name)}
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-      {sanitizeText(entry.email)}
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-      {sanitizeText(entry.country || 'Not specified')}
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-      {formatDate(entry.created_at)}
-    </td>
-  </tr>
-));
+const WaitlistTableRow = React.memo(({ entry, index, formatDate, sanitizeText, shimmerLoading, isNew, onMarkAsSeen }) => {
+  useEffect(() => {
+    if (isNew) {
+      // Auto-mark as seen after 3 seconds
+      const timer = setTimeout(() => {
+        onMarkAsSeen(entry.id);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isNew, entry.id, onMarkAsSeen]);
+
+  return (
+    <tr className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-green-50 transition-colors ${shimmerLoading ? 'animate-pulse' : ''} ${isNew ? 'ring-2 ring-green-200 ring-opacity-50' : ''}`}>
+      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 relative">
+        {index}
+        {isNew && (
+          <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full font-semibold animate-pulse">
+            NEW
+          </span>
+        )}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+        {sanitizeText(entry.name)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+        {sanitizeText(entry.email)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+        {sanitizeText(entry.country || 'Not specified')}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {formatDate(entry.created_at)}
+      </td>
+    </tr>
+  );
+});
 
 const AdminWaitlist = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportType, setExportType] = useState('');
   const [shimmerLoading, setShimmerLoading] = useState(false);
+
+  // Local storage for pagination memory
+  const [storedPage, setStoredPage] = useLocalStorage('waitlist-current-page', 1);
+  const [storedSearch, setStoredSearch] = useLocalStorage('waitlist-search-term', '');
+  const [storedCountry, setStoredCountry] = useLocalStorage('waitlist-country-filter', '');
+  const [lastVisitTime, setLastVisitTime] = useLocalStorage('waitlist-last-visit', Date.now());
+  const [seenEntries, setSeenEntries] = useLocalStorage('waitlist-seen-entries', new Set());
 
   // Handle export with confirmation
   const handleExport = (type) => {
@@ -59,6 +106,7 @@ const AdminWaitlist = () => {
   };
 
   const {
+    allEntries,
     paginatedEntries,
     stats,
     uniqueCountries,
@@ -80,8 +128,46 @@ const AdminWaitlist = () => {
     prevPage,
     formatDate,
     sanitizeText
-  } = useWaitlistData();
+  } = useWaitlistData(storedPage, storedSearch, storedCountry);
 
+  // Update local storage when filters change
+  useEffect(() => {
+    setStoredPage(currentPage);
+  }, [currentPage, setStoredPage]);
+
+  useEffect(() => {
+    setStoredSearch(searchTerm);
+  }, [searchTerm, setStoredSearch]);
+
+  useEffect(() => {
+    setStoredCountry(countryFilter);
+  }, [countryFilter, setStoredCountry]);
+
+  // Update last visit time when component mounts
+  useEffect(() => {
+    setLastVisitTime(Date.now());
+  }, [setLastVisitTime]);
+
+  // Track new entries since last visit
+  const newEntriesSinceLastVisit = useMemo(() => {
+    if (!allEntries.length) return new Set();
+    const lastVisit = new Date(lastVisitTime);
+    return new Set(
+      allEntries
+        .filter(entry => new Date(entry.created_at) > lastVisit)
+        .map(entry => entry.id)
+    );
+  }, [allEntries, lastVisitTime]);
+
+  // Mark entries as seen
+  const markAsSeen = useCallback((entryId) => {
+    setSeenEntries(prev => new Set([...prev, entryId]));
+  }, [setSeenEntries]);
+
+  // Check if entry is new and unseen
+  const isNewEntry = useCallback((entryId) => {
+    return newEntriesSinceLastVisit.has(entryId) && !seenEntries.has(entryId);
+  }, [newEntriesSinceLastVisit, seenEntries]);
 
   if (loading) {
     return (
@@ -140,7 +226,7 @@ const AdminWaitlist = () => {
 
       <div className="relative z-10">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 animate-fade-in">
             <div className="flex items-center justify-between">
               <div>
@@ -151,7 +237,22 @@ const AdminWaitlist = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 animate-fade-in" style={{animationDelay: '0.1s'}}>
+          <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200 animate-fade-in" style={{animationDelay: '0.1s'}}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-700">New Since Visit</p>
+                <p className="text-3xl font-bold text-green-900">{newEntriesSinceLastVisit.size}</p>
+                {newEntriesSinceLastVisit.size > 0 && (
+                  <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full animate-pulse">
+                    🔥 Hot
+                  </span>
+                )}
+              </div>
+              <div className="text-4xl">✨</div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 animate-fade-in" style={{animationDelay: '0.2s'}}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-purple-700">Countries Joined</p>
@@ -161,11 +262,11 @@ const AdminWaitlist = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200 animate-fade-in" style={{animationDelay: '0.2s'}}>
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200 animate-fade-in" style={{animationDelay: '0.3s'}}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-700">This Month</p>
-                <p className="text-3xl font-bold text-green-900">{stats.thisMonth}</p>
+                <p className="text-sm font-medium text-orange-700">This Month</p>
+                <p className="text-3xl font-bold text-orange-900">{stats.thisMonth}</p>
               </div>
               <div className="text-4xl">📅</div>
             </div>
@@ -183,15 +284,26 @@ const AdminWaitlist = () => {
 
           <div className="mt-4 md:mt-0 flex items-center gap-4">
             <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-              {filteredEntries.length} of {waitlistEntries.length} entries
+              {(paginatedEntries || []).length} of {stats.totalSignups || 0} entries
             </div>
-            <button
-              onClick={fetchWaitlistData}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-              title="Refresh data"
-            >
-              🔄 Refresh
-            </button>
+            <div className="flex gap-2">
+              {newEntriesSinceLastVisit.size > 0 && (
+                <button
+                  onClick={() => setSeenEntries(new Set(allEntries.map(e => e.id)))}
+                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg transition-colors text-sm"
+                  title="Mark all as seen"
+                >
+                  ✅ Mark All Seen
+                </button>
+              )}
+              <button
+                onClick={fetchWaitlistData}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                title="Refresh data"
+              >
+                🔄 Refresh
+              </button>
+            </div>
           </div>
         </div>
 
@@ -213,7 +325,7 @@ const AdminWaitlist = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="">All Countries</option>
-              {uniqueCountries.map(country => (
+              {(uniqueCountries || []).map(country => (
                 <option key={country} value={country}>{country}</option>
               ))}
             </select>
@@ -225,14 +337,14 @@ const AdminWaitlist = () => {
           <div className="flex gap-2">
             <button
               onClick={() => handleExport('csv')}
-              disabled={paginatedEntries.length === 0}
+              disabled={(paginatedEntries || []).length === 0}
               className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
             >
               📊 Export CSV
             </button>
             <button
               onClick={() => handleExport('json')}
-              disabled={paginatedEntries.length === 0}
+              disabled={(paginatedEntries || []).length === 0}
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
             >
               📄 Export JSON
@@ -243,7 +355,7 @@ const AdminWaitlist = () => {
           </div>
         </div>
 
-        {waitlistEntries.length === 0 ? (
+        {stats.totalSignups === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">📝</div>
             <p className="text-gray-500 text-lg">No waitlist entries yet</p>
@@ -263,7 +375,7 @@ const AdminWaitlist = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {paginatedEntries.map((entry, index) => {
+                  {(paginatedEntries || []).map((entry, index) => {
                     const globalIndex = (currentPage - 1) * 50 + index + 1;
                     return (
                       <WaitlistTableRow
@@ -273,6 +385,8 @@ const AdminWaitlist = () => {
                         formatDate={formatDate}
                         sanitizeText={sanitizeText}
                         shimmerLoading={shimmerLoading && index === 0}
+                        isNew={isNewEntry(entry.id)}
+                        onMarkAsSeen={markAsSeen}
                       />
                     );
                   })}
@@ -286,7 +400,7 @@ const AdminWaitlist = () => {
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between">
             <div className="text-sm text-gray-500">
-              Showing {((currentPage - 1) * 50) + 1} to {Math.min(currentPage * 50, paginatedEntries.length)} of {paginatedEntries.length} entries
+              Showing {((currentPage - 1) * 50) + 1} to {Math.min(currentPage * 50, (paginatedEntries || []).length)} of {(paginatedEntries || []).length} entries
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -320,7 +434,7 @@ const AdminWaitlist = () => {
             <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full mx-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Export</h3>
               <p className="text-gray-600 mb-6">
-                Export {paginatedEntries.length} waitlist entries as {exportType.toUpperCase()}?
+                Export {(paginatedEntries || []).length} waitlist entries as {exportType.toUpperCase()}?
                 This will include all currently visible data.
               </p>
               <div className="flex gap-3 justify-end">
