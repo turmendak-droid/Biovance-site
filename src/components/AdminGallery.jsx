@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { safeQuery } from '../lib/supabaseUtils'
 import { Upload, X, Image as ImageIcon, Trash2 } from 'lucide-react'
 
 const AdminGallery = () => {
@@ -41,35 +42,12 @@ const AdminGallery = () => {
       }
       console.log('✅ User authenticated for gallery fetch:', userData.user.email)
 
-      const { data, error } = await supabase.storage
-        .from('test-bucket')
-        .list('', { limit: 100, sortBy: { column: 'name', order: 'desc' } })
-
-      console.log('📋 Raw list response:', { data, error })
-
-      if (error) {
-        console.error('❌ List error details:', {
-          message: error.message,
-          statusCode: error.statusCode,
-          hint: error.hint,
-          details: error.details,
-          code: error.code
-        })
-
-        // Check for permission/policy issues
-        if (error.statusCode === 403 || error.message?.includes('permission') || error.message?.includes('policy')) {
-          console.error('🔒 PERMISSION BLOCK DETECTED for list operation!')
-          console.error('💡 FIX: Create this RLS policy in Supabase SQL Editor:')
-          console.error(`
-CREATE POLICY "Allow authenticated users to list test-bucket" ON storage.objects
-FOR SELECT TO authenticated
-USING (bucket_id = 'test-bucket');
-          `)
-        }
-
-        setImages([])
-        return
-      }
+      // Use safeQuery for storage operations
+      const data = await safeQuery('test-bucket', () =>
+        supabase.storage
+          .from('test-bucket')
+          .list('', { limit: 100, sortBy: { column: 'name', order: 'desc' } })
+      , { isStorage: true })
 
       if (!data || data.length === 0) {
         console.log('🪣 No images found in bucket (list returned empty).')
@@ -291,13 +269,14 @@ WITH CHECK (bucket_id = 'test-bucket');
       console.log("🗑️ Deletion started for:", imageName);
 
       // 1️⃣ Fetch all files from Supabase root
-      const { data: allFiles, error: listError } = await supabase.storage
-        .from('test-bucket')
-        .list('', { limit: 1000 });
+      const allFiles = await safeQuery('test-bucket', () =>
+        supabase.storage
+          .from('test-bucket')
+          .list('', { limit: 1000 })
+      , { isStorage: true });
 
-      if (listError) {
-        console.error('❌ Failed to list files:', listError);
-        alert('Error fetching files before deletion.');
+      if (!allFiles || allFiles.length === 0) {
+        alert('❌ No files found in bucket or error fetching files.');
         return;
       }
 
@@ -316,13 +295,14 @@ WITH CHECK (bucket_id = 'test-bucket');
       console.log("✅ Confirmed file path to delete:", filePath);
 
       // 3️⃣ Delete exact file path
-      const { error: deleteError } = await supabase.storage
-        .from('test-bucket')
-        .remove([filePath]);
+      const deleteResult = await safeQuery('test-bucket', () =>
+        supabase.storage
+          .from('test-bucket')
+          .remove([filePath])
+      , { isStorage: true });
 
-      if (deleteError) {
-        console.error("❌ Delete failed:", deleteError);
-        alert("Error deleting file: " + deleteError.message);
+      if (!deleteResult) {
+        alert("❌ Error deleting file - operation failed silently");
         return;
       }
 

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import Navbar from './components/Navbar'
@@ -16,6 +16,7 @@ import FloatingCard from './components/FloatingCard'
 import ProtectedRoute from './components/ProtectedRoute'
 import Waitlist from './pages/Waitlist'
 import { supabase } from './lib/supabase'
+import { initializeDatabase, ensureSupabaseCacheSynced } from './lib/supabaseUtils'
 
 // Log Supabase initialization status
 console.log('🚀 App starting...')
@@ -41,6 +42,23 @@ const Home = () => (
 )
 
 const App = () => {
+  // Initialize database tables on app startup
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        // Initialize database first
+        await initializeDatabase()
+
+        // Then ensure Supabase cache is synced
+        await ensureSupabaseCacheSynced()
+      } catch (err) {
+        console.error('❌ App initialization failed:', err)
+      }
+    }
+
+    initApp()
+  }, [])
+
   return (
     <AuthProvider>
       <Routes>

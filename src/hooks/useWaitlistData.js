@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { safeQuery } from '../lib/supabaseUtils';
 
 const WAITLIST_TABLE = import.meta.env.VITE_SUPABASE_WAITLIST_TABLE || 'waitlist';
 const ITEMS_PER_PAGE = 50;
@@ -84,7 +85,7 @@ export const useWaitlistData = (initialPage = 1, initialSearch = '', initialCoun
     return [...new Set(allEntries.map(entry => entry.country).filter(Boolean))].sort();
   }, [allEntries]);
 
-  // Fetch data with retry logic
+  // Fetch data with retry logic and safe table handling
   const fetchWaitlistData = useCallback(async () => {
     try {
       console.log('📦 Fetching waitlist data...');
@@ -96,14 +97,13 @@ export const useWaitlistData = (initialPage = 1, initialSearch = '', initialCoun
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-        const { data, error } = await supabase
-          .from(WAITLIST_TABLE)
-          .select('*')
-          .gte('created_at', twelveMonthsAgo.toISOString())
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        return data;
+        return await safeQuery(WAITLIST_TABLE, () =>
+          supabase
+            .from(WAITLIST_TABLE)
+            .select('*')
+            .gte('created_at', twelveMonthsAgo.toISOString())
+            .order('created_at', { ascending: false })
+        );
       });
 
       console.log(`✅ Loaded ${result.length} waitlist entries`);
@@ -112,6 +112,8 @@ export const useWaitlistData = (initialPage = 1, initialSearch = '', initialCoun
     } catch (err) {
       console.error('❌ Error fetching waitlist:', err);
       setError(err.message);
+      // Set empty array as fallback
+      setAllEntries([]);
     } finally {
       setLoading(false);
     }
@@ -121,28 +123,39 @@ export const useWaitlistData = (initialPage = 1, initialSearch = '', initialCoun
   useEffect(() => {
     fetchWaitlistData();
 
-    const subscription = supabase
-      .channel('waitlist_changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: WAITLIST_TABLE
-      }, (payload) => {
-        console.log('🔄 New waitlist entry:', sanitizeText(payload.new.email));
-        setAllEntries(prev => [payload.new, ...prev]);
-        setLastUpdated(new Date());
-      })
-      .subscribe((status) => {
-        setSubscriptionStatus(status);
-        if (status === 'SUBSCRIBED') {
-          console.log('📡 Real-time subscription active');
-        } else if (status === 'CLOSED') {
-          console.warn('⚠️ Real-time subscription closed');
-        }
-      });
+    // Set up real-time subscription with error handling
+    let subscription;
+    try {
+      subscription = supabase
+        .channel('waitlist_changes')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: WAITLIST_TABLE
+        }, (payload) => {
+          console.log('🔄 New waitlist entry:', sanitizeText(payload.new.email));
+          setAllEntries(prev => [payload.new, ...prev]);
+          setLastUpdated(new Date());
+        })
+        .subscribe((status) => {
+          setSubscriptionStatus(status);
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 Real-time subscription active');
+          } else if (status === 'CLOSED') {
+            console.warn('⚠️ Real-time subscription closed - table may not exist yet');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.warn('⚠️ Real-time subscription error - table may not exist');
+          }
+        });
+    } catch (subError) {
+      console.warn('⚠️ Could not set up real-time subscription:', subError.message);
+      setSubscriptionStatus('ERROR');
+    }
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, [fetchWaitlistData]);
 
