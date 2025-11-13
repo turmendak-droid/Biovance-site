@@ -4,7 +4,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // CORS preflight
+    // Handle CORS preflight OPTIONS request
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
@@ -17,16 +17,21 @@ export default {
       });
     }
 
+    // Only allow POST requests
     if (request.method !== "POST") {
-      return new Response("Method Not Allowed", { status: 405 });
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Allow": "POST, OPTIONS"
+        }
+      });
     }
 
     try {
+      // Parse request body
       const body = await request.json();
-
-      // TEMP test — remove later
-      console.log("CF EMAIL API HIT:", body);
-
       const { to, subject, title, excerpt, featuredImage, url: blogUrl } = body;
 
       // Validate required fields
@@ -42,8 +47,9 @@ export default {
         });
       }
 
-      // Check if Resend API key is configured
+      // Check if RESEND_API_KEY is configured
       if (!env.RESEND_API_KEY) {
+        console.error('RESEND_API_KEY not configured in Cloudflare Pages');
         return new Response(JSON.stringify({
           error: 'Email service not configured'
         }), {
@@ -55,9 +61,10 @@ export default {
         });
       }
 
+      // Initialize Resend
       const resend = new Resend(env.RESEND_API_KEY);
 
-      console.log('📧 Sending email to:', to, 'Subject:', subject || `🧬 ${title}`);
+      console.log(`Sending email to: ${to}, Subject: ${subject || `🧬 ${title}`}`);
 
       // Create HTML email template
       const htmlContent = `
@@ -132,8 +139,9 @@ export default {
         html: htmlContent,
       });
 
-      console.log('✅ Email sent successfully:', result);
+      console.log('Email sent successfully:', result);
 
+      // Return success response
       return new Response(JSON.stringify({
         success: true,
         message: 'Email sent successfully',
@@ -146,11 +154,12 @@ export default {
         }
       });
 
-    } catch (err) {
-      console.error('💥 Email error:', err);
+    } catch (error) {
+      console.error('Email sending error:', error);
+
       return new Response(JSON.stringify({
-        ok: false,
-        error: String(err)
+        error: 'Failed to send email',
+        details: error.message
       }), {
         status: 500,
         headers: {
@@ -160,4 +169,4 @@ export default {
       });
     }
   }
-}
+};
