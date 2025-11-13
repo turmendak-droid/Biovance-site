@@ -4,7 +4,7 @@ A modern React application for Biovance's AI × Nature × Discovery platform, bu
 
 ## God-Mode Features
 
-- 🧬 **Admin Dashboard**: Complete content management with system monitorin
+- 🧬 **Admin Dashboard**: Complete content management with system monitoring
 - 📧 **Email Campaigns**: Automated blog post newsletters
 - 👥 **Waitlist Management**: Real-time subscriber tracking with persistent state
 - 🖼️ **Media Gallery**: Cloud storage with Supabase and automatic error recovery
