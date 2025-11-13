@@ -297,23 +297,28 @@ export default function BlogEditor({ editingBlog, onSave }) {
 
       if (editingBlog) {
         console.log('✏️ Updating existing blog:', editingBlog.id);
-        ({ error } = await supabase.from("blogs").update({
+        const updateData = {
           title,
           author,
           content,
-          featured_image: featuredImage,
-        }).eq('id', editingBlog.id));
+          featured_image: featuredImage || null,
+          updated_at: new Date().toISOString(),
+        };
+        console.log('📤 Update data:', updateData);
+        ({ error } = await supabase.from("blogs").update(updateData).eq('id', editingBlog.id));
         blogId = editingBlog.id;
       } else {
         console.log('📝 Creating new blog');
-        const { data, error: insertError } = await supabase.from("blogs").insert({
+        const insertData = {
           title,
           author,
           content,
-          featured_image: featuredImage,
+          featured_image: featuredImage || null,
           published: true,
-          created_at: new Date(),
-        }).select('id').single();
+          created_at: new Date().toISOString(),
+        };
+        console.log('📤 Insert data:', insertData);
+        const { data, error: insertError } = await supabase.from("blogs").insert(insertData).select('id').single();
 
         error = insertError;
         blogId = data?.id;
