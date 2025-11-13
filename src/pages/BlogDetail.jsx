@@ -75,7 +75,7 @@ const BlogDetail = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <img src={blog.image_url || '/assets/41308.jpg'} alt={blog.title} className='w-full h-64 object-cover rounded-xl mb-8' />
+            <img src={blog.featured_image || '/assets/41308.jpg'} alt={blog.title} className='w-full h-64 object-cover rounded-xl mb-8' />
             <h1 className='text-4xl font-bold font-["Space_Grotesk"] text-green-900 mb-4'>{blog.title}</h1>
             <p className='text-gray-600 mb-8'>{new Date(blog.created_at).toLocaleDateString()}</p>
             <div className='prose max-w-none' dangerouslySetInnerHTML={{ __html: blog.content }} />

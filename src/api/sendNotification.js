@@ -3,27 +3,26 @@ import { Resend } from 'resend';
 import BlogEmailTemplate from '../emails/BlogEmailTemplate';
 
 export async function notifyAllMembers(blog) {
-  console.log('🚀 Sending blog notification to all members:', blog.title);
+  console.log('🚀 Sending blog notification to all waitlist members:', blog.title);
 
   try {
-    // Fetch all member emails from the members table (exclude unsubscribed)
+    // Fetch all waitlist member emails
     const { data: members, error } = await supabase
-      .from('members')
-      .select('email')
-      .eq('unsubscribed', false)
+      .from('waitlist')
+      .select('email, name')
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ Error fetching members:', error);
-      throw new Error('Failed to fetch member emails');
+      console.error('❌ Error fetching waitlist members:', error);
+      throw new Error('Failed to fetch waitlist member emails');
     }
 
     if (!members || members.length === 0) {
-      console.warn('⚠️ No members found in database.');
-      return { success: true, message: 'No members to notify', count: 0 };
+      console.warn('⚠️ No waitlist members found in database.');
+      return { success: true, message: 'No waitlist members to notify', count: 0 };
     }
 
-    console.log(`📧 Found ${members.length} members to notify`);
+    console.log(`📧 Found ${members.length} waitlist members to notify`);
 
     // Initialize Resend with API key
     const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);

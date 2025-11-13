@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase'
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('overview')
   const [editingBlog, setEditingBlog] = useState(null)
+  const [blogs, setBlogs] = useState([])
   const [stats, setStats] = useState({
     totalBlogs: 0,
     newsletterSubs: 0,
@@ -102,6 +103,31 @@ const Admin = () => {
     }
   }, [isAuthenticated])
 
+  // Fetch blogs for management
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('blogs')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching blogs:', error)
+          return
+        }
+
+        setBlogs(data || [])
+      } catch (error) {
+        console.error('Error fetching blogs:', error)
+      }
+    }
+
+    if (isAuthenticated()) {
+      fetchBlogs()
+    }
+  }, [isAuthenticated])
+
 
 
   const handleEditBlog = (blog) => {
@@ -119,7 +145,9 @@ const Admin = () => {
         console.error("Delete error:", error.message)
         alert("Failed to delete blog")
       } else {
+        // Refresh the blogs list
         setBlogs(blogs.filter(b => b.id !== id))
+        alert("Blog deleted successfully!")
       }
     }
   }
@@ -268,7 +296,101 @@ const Admin = () => {
           )}
 
           {activeTab === 'blogs' && (
-            <BlogEditor editingBlog={editingBlog} onSave={() => { setEditingBlog(null); window.location.reload(); }} />
+            <div className='space-y-8'>
+              {editingBlog ? (
+                // Show editor when editing
+                <div>
+                  <button
+                    onClick={() => setEditingBlog(null)}
+                    className='mb-4 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors'
+                  >
+                    ← Back to Blogs List
+                  </button>
+                  <BlogEditor
+                    editingBlog={editingBlog}
+                    onSave={() => {
+                      setEditingBlog(null);
+                      // Refresh blogs list
+                      window.location.reload();
+                    }}
+                  />
+                </div>
+              ) : (
+                // Show blogs list
+                <div className='space-y-6'>
+                  <div className='flex justify-between items-center'>
+                    <h2 className='text-2xl font-bold text-gray-900'>Blog Management</h2>
+                    <button
+                      onClick={() => setEditingBlog({})} // Empty object for new blog
+                      className='bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2'
+                    >
+                      ✏️ Write New Blog
+                    </button>
+                  </div>
+
+                  {blogs.length === 0 ? (
+                    <div className='bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center'>
+                      <FileText className='w-12 h-12 text-gray-400 mx-auto mb-4' />
+                      <h3 className='text-lg font-semibold text-gray-900 mb-2'>No blogs yet</h3>
+                      <p className='text-gray-600 mb-4'>Create your first blog post to get started.</p>
+                      <button
+                        onClick={() => setEditingBlog({})} // Empty object for new blog
+                        className='bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors'
+                      >
+                        Create First Blog
+                      </button>
+                    </div>
+                  ) : (
+                    <div className='grid gap-4'>
+                      {blogs.map((blog) => (
+                        <div key={blog.id} className='bg-white p-6 rounded-xl shadow-sm border border-gray-200'>
+                          <div className='flex justify-between items-start'>
+                            <div className='flex-1'>
+                              <h3 className='text-xl font-semibold text-gray-900 mb-2'>{blog.title}</h3>
+                              <p className='text-gray-600 mb-3 line-clamp-2'>{blog.excerpt || 'No excerpt'}</p>
+                              <div className='flex items-center gap-4 text-sm text-gray-500'>
+                                <span>By {blog.author || 'Unknown'}</span>
+                                <span>•</span>
+                                <span>{new Date(blog.created_at).toLocaleDateString()}</span>
+                                <span>•</span>
+                                <span className={`px-2 py-1 rounded-full text-xs ${
+                                  blog.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {blog.published ? 'Published' : 'Draft'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className='flex gap-2 ml-4'>
+                              <button
+                                onClick={() => handleEditBlog(blog)}
+                                className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2'
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBlog(blog.id)}
+                                className='bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2'
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </div>
+                          {blog.featured_image && (
+                            <div className='mt-4'>
+                              <img
+                                src={blog.featured_image}
+                                alt="Featured"
+                                className='w-32 h-20 object-cover rounded-lg border border-gray-200'
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {activeTab === 'users' && (

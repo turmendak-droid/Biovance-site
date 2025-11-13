@@ -107,7 +107,7 @@ const Updates = () => {
                   className='bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden'
                 >
                   <img
-                    src={blog.image_url || '/assets/41308.jpg'}
+                    src={blog.featured_image || '/assets/41308.jpg'}
                     alt={blog.title}
                     className='w-full h-48 object-cover'
                   />

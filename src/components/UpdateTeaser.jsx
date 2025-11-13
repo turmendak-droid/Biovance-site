@@ -53,7 +53,7 @@ const UpdateTeaser = () => {
           ✕
         </button>
         <div className='pr-4'>
-          <img src={latestBlog.image_url} alt={latestBlog.title} className='w-full h-24 object-cover rounded-lg mb-3' />
+          <img src={latestBlog.featured_image} alt={latestBlog.title} className='w-full h-24 object-cover rounded-lg mb-3' />
           <h4 className='text-lg font-semibold font-["Space_Grotesk"] text-white mb-2'>{latestBlog.title}</h4>
           <p className='text-sm font-["Inter"] text-green-100 mb-4 leading-relaxed'>
             {latestBlog.content.slice(0, 100)}...

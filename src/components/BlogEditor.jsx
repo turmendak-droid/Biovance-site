@@ -45,9 +45,33 @@ export default function BlogEditor({ editingBlog, onSave }) {
 
   // Update state when editingBlog changes
   React.useEffect(() => {
+    console.log('🔄 Loading blog for editing:', editingBlog);
+    console.log('📸 Featured image from DB:', editingBlog?.featured_image);
+    console.log('🔍 editingBlog type:', typeof editingBlog, 'keys:', Object.keys(editingBlog || {}));
+
+    // Reset all form fields when switching to new blog creation
+    if (editingBlog && Object.keys(editingBlog).length === 0) {
+      console.log('🆕 Creating new blog - resetting all fields');
+      setTitle("");
+      setAuthor("");
+      setContent("");
+      setFeaturedImage("");
+      setSendEmail(false);
+      setSendNotification(true);
+      if (editor) {
+        editor.commands.setContent('');
+      }
+      return;
+    }
+
+    // Load existing blog data for editing
     setTitle(editingBlog?.title || "");
     setAuthor(editingBlog?.author || "");
     setContent(editingBlog?.content || "");
+    setFeaturedImage(editingBlog?.featured_image || "");
+
+    console.log('✅ Featured image set to:', editingBlog?.featured_image || "");
+
     if (editor && editingBlog?.content) {
       editor.commands.setContent(editingBlog.content);
     }
@@ -205,7 +229,7 @@ export default function BlogEditor({ editingBlog, onSave }) {
   const handleFeaturedImageUpload = async (file) => {
     if (!file) return;
 
-    console.log('🖼️ Featured image selected:', file.name);
+    console.log('🖼️ Featured image selected:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
 
     // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
@@ -220,6 +244,8 @@ export default function BlogEditor({ editingBlog, onSave }) {
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
       const fileName = `featured-${Date.now()}-${cleanFileName}`;
 
+      console.log('📁 Upload path:', fileName);
+
       const { data, error } = await supabase.storage
         .from("test-bucket")
         .upload(fileName, file, {
@@ -229,10 +255,12 @@ export default function BlogEditor({ editingBlog, onSave }) {
         });
 
       if (error) {
-        console.error("Featured image upload failed:", error);
+        console.error("❌ Featured image upload failed:", error);
         alert("Featured image upload failed: " + error.message);
         return;
       }
+
+      console.log('✅ Upload successful, data.path:', data.path);
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -240,16 +268,18 @@ export default function BlogEditor({ editingBlog, onSave }) {
         .getPublicUrl(data.path);
 
       if (!urlData?.publicUrl) {
-        console.error("Failed to get featured image URL");
+        console.error("❌ Failed to get featured image URL");
         alert("Upload succeeded but failed to get image URL");
         return;
       }
 
+      console.log('🔗 Generated public URL:', urlData.publicUrl);
+
       setFeaturedImage(urlData.publicUrl);
-      console.log('✅ Featured image uploaded successfully:', urlData.publicUrl);
+      console.log('✅ Featured image state updated to:', urlData.publicUrl);
       alert("Featured image uploaded successfully!");
     } catch (err) {
-      console.error("Unexpected error:", err);
+      console.error("💥 Unexpected error during featured image upload:", err);
       alert("Unexpected error during featured image upload: " + err.message);
     }
   };
@@ -258,10 +288,15 @@ export default function BlogEditor({ editingBlog, onSave }) {
     setSaving(true);
 
     try {
+      console.log('🚀 Publishing blog...');
+      console.log('📸 Featured image to save:', featuredImage);
+      console.log('📝 Blog data:', { title, author, content: content.substring(0, 100) + '...', featuredImage });
+
       let error;
       let blogId;
 
       if (editingBlog) {
+        console.log('✏️ Updating existing blog:', editingBlog.id);
         ({ error } = await supabase.from("blogs").update({
           title,
           author,
@@ -270,6 +305,7 @@ export default function BlogEditor({ editingBlog, onSave }) {
         }).eq('id', editingBlog.id));
         blogId = editingBlog.id;
       } else {
+        console.log('📝 Creating new blog');
         const { data, error: insertError } = await supabase.from("blogs").insert({
           title,
           author,
@@ -281,6 +317,7 @@ export default function BlogEditor({ editingBlog, onSave }) {
 
         error = insertError;
         blogId = data?.id;
+        console.log('✅ New blog created with ID:', blogId);
       }
 
       if (error) {
@@ -291,59 +328,81 @@ export default function BlogEditor({ editingBlog, onSave }) {
 
       console.log("Blog saved successfully:", { title, author, content: content.substring(0, 100) + "..." });
 
-      // Send email newsletter if requested
+      // Send email newsletter to waitlist members if requested
       if (sendEmail) {
         try {
-          console.log("📧 Sending email newsletter...");
+          console.log("📧 Sending email newsletter to waitlist members...");
 
-          // Get subscriber emails (you'll need to implement this based on your subscriber table)
-          const { data: subscribers, error: subError } = await supabase
-            .from('newsletter_subscribers')
-            .select('email')
-            .eq('subscribed', true);
+          // Get waitlist member emails
+          const { data: waitlistMembers, error: waitlistError } = await supabase
+            .from('waitlist')
+            .select('email, name')
+            .order('created_at', { ascending: false });
 
-          if (subError) {
-            console.warn("Could not fetch subscribers:", subError);
+          if (waitlistError) {
+            console.warn("Could not fetch waitlist members:", waitlistError);
           }
 
-          if (subscribers && subscribers.length > 0) {
-            // Send email newsletter
-            const response = await fetch('/api/sendBlogEmail', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                to: subscribers.map(s => s.email).join(','),
-                subject: `🧬 ${title}`,
-                title,
-                excerpt: content.replace(/<[^>]*>/g, '').substring(0, 300) + (content.length > 300 ? '...' : ''),
-                featuredImage,
-                url: `${window.location.origin}/updates`
-              })
-            });
+          if (waitlistMembers && waitlistMembers.length > 0) {
+            console.log(`📧 Found ${waitlistMembers.length} waitlist members to email`);
 
-            // ✅ Only read the response once
-            const text = await response.text();
+            let successCount = 0;
+            let failureCount = 0;
 
-            if (!response.ok) {
-              console.error('❌ Newsletter server returned error:', response.status, text);
-              setMessage(prev => prev + " ⚠️ Blog saved but newsletter failed: Server responded with " + response.status + " - " + text);
-            } else {
-              // ✅ Try to parse JSON safely
-              let result;
+            // Send individual emails to each waitlist member
+            for (let i = 0; i < waitlistMembers.length; i++) {
+              const member = waitlistMembers[i];
+
               try {
-                result = JSON.parse(text);
-              } catch {
-                result = text;
+                console.log(`📤 Sending to ${member.email}...`);
+
+                const response = await fetch('/api/sendBlogEmail', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    to: member.email,
+                    subject: `🧬 ${title}`,
+                    title,
+                    excerpt: content.replace(/<[^>]*>/g, '').substring(0, 300) + (content.length > 300 ? '...' : ''),
+                    featuredImage,
+                    url: `${window.location.origin}/updates`
+                  })
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                  console.error(`❌ Failed to send to ${member.email}:`, response.status, text);
+                  failureCount++;
+                } else {
+                  console.log(`✅ Successfully sent to ${member.email}`);
+                  successCount++;
+                }
+
+                // Small delay between sends to prevent overwhelming the API
+                if (i < waitlistMembers.length - 1) {
+                  await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+              } catch (sendError) {
+                console.error(`💥 Error sending to ${member.email}:`, sendError);
+                failureCount++;
               }
-              console.log("✅ Email newsletter sent successfully:", result);
-              setMessage(prev => prev + " 📧 Newsletter sent to " + (result.stats?.successful || 'multiple') + " subscribers!");
+            }
+
+            console.log(`📧 Newsletter campaign complete: ${successCount} successful, ${failureCount} failed`);
+            setMessage(prev => prev + ` 📧 Newsletter sent to ${successCount} waitlist members!`);
+
+            if (failureCount > 0) {
+              setMessage(prev => prev + ` (${failureCount} failed)`);
             }
           } else {
-            console.log("📧 No subscribers found, skipping newsletter send");
+            console.log("📧 No waitlist members found, skipping newsletter send");
+            setMessage(prev => prev + " 📧 No waitlist members to notify.");
           }
         } catch (emailError) {
           console.error("Error sending newsletter:", emailError);
-          // Don't fail the blog publish if email fails
+          setMessage(prev => prev + " ⚠️ Blog saved but newsletter failed: " + emailError.message);
         }
       }
 
@@ -374,12 +433,15 @@ export default function BlogEditor({ editingBlog, onSave }) {
 
       setMessage(editingBlog ? "✅ Blog updated successfully!" : "✅ Blog published successfully!");
       if (!editingBlog) {
+        console.log('🔄 Resetting form for new blog creation');
+        console.log('📸 Clearing featured image from state');
         setTitle("");
         setAuthor("");
         setContent("");
         setFeaturedImage("");
         setSendEmail(false);
         setSendNotification(true); // Reset to default
+        console.log('✅ Form reset complete');
       }
       onSave && onSave();
     } catch (err) {
