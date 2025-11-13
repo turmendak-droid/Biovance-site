@@ -170,39 +170,39 @@ export async function onRequestPost({ request, env }) {
   }
 }
 
-// Handle OPTIONS requests for CORS
-export async function onRequestOptions() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
-}
-
-// Default export to handle all methods (fallback)
+// Default export for Cloudflare Pages Functions (production)
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
     const method = request.method;
 
-    console.log(`📧 Function called: ${method} ${url.pathname}`);
+    console.log(`📧 Function called: ${method} ${new URL(request.url).pathname}`);
 
-    // Route to appropriate handler
-    if (method === 'POST') {
-      return onRequestPost({ request, env });
-    } else if (method === 'OPTIONS') {
-      return onRequestOptions();
-    } else {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
+    // Handle CORS preflight OPTIONS request
+    if (method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204, // No Content for OPTIONS
         headers: {
-          'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Max-Age': '86400', // 24 hours
         },
       });
     }
+
+    // Handle POST requests
+    if (method === 'POST') {
+      return onRequestPost({ request, env });
+    }
+
+    // Method not allowed
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Allow': 'POST, OPTIONS',
+      },
+    });
   }
 };
