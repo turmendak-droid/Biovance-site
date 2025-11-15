@@ -44,15 +44,40 @@ const Waitlist = () => {
       .from('waitlist')
       .insert([formData])
 
-    setLoading(false)
-
     if (error) {
       console.error("❌ Waitlist submission error:", error.message)
       alert("Failed to join waitlist. Please try again.")
-    } else {
-      console.log("✅ Joined waitlist successfully")
-      setSubmitted(true)
+      setLoading(false)
+      return
     }
+
+    console.log("✅ Joined waitlist successfully")
+
+    // Send welcome email
+    try {
+      const response = await fetch('https://rwwmyvrjvlibpzyqzxqg.functions.supabase.co/rapid-worker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'welcome',
+          email: formData.email
+        })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Welcome email failed:', errorText)
+        // Don't show error to user, just log it
+      } else {
+        console.log('✅ Welcome email sent successfully')
+      }
+    } catch (emailError) {
+      console.error('❌ Welcome email error:', emailError)
+      // Don't show error to user, just log it
+    }
+
+    setLoading(false)
+    setSubmitted(true)
   }
 
   return (

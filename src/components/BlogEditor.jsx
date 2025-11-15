@@ -4,7 +4,6 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { supabase } from "../lib/supabase";
-import { notifyAllMembers } from '../api/sendNotification';
 
 export default function BlogEditor({ editingBlog, onSave }) {
   const [title, setTitle] = useState(editingBlog?.title || "");
@@ -188,36 +187,30 @@ export default function BlogEditor({ editingBlog, onSave }) {
     try {
       console.log('📧 Sending test email to:', testEmail);
 
-      const response = await fetch('/api/sendBlogEmail', {
+      const blogData = {
+        title,
+        excerpt: content.replace(/<[^>]*>/g, '').substring(0, 300) + (content.length > 300 ? '...' : ''),
+        featuredImageURL: featuredImage,
+        url: `${window.location.origin}/updates`
+      };
+
+      const response = await fetch('https://rwwmyvrjvlibpzyqzxqg.functions.supabase.co/rapid-worker', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: testEmail,
-          subject: `🧬 ${title}`,
-          title,
-          excerpt: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
-          featuredImage,
-          url: `${window.location.origin}/updates`
+          type: 'blog_update',
+          blog: blogData
         })
       });
 
-      // ✅ Only read the response once
-      const text = await response.text();
-
       if (!response.ok) {
-        console.error('💥 Error:', text);
-        alert(`❌ Failed to send test email: Server responded with ${response.status} - ${text}`);
+        const errorText = await response.text();
+        console.error('💥 Error:', errorText);
+        alert(`❌ Failed to send test email: Server responded with ${response.status} - ${errorText}`);
         return;
       }
 
-      // ✅ Try to parse JSON safely
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = text;
-      }
-
+      const data = await response.json();
       console.log('✅ Test email sent successfully:', data);
       alert(`✅ Test email sent to ${testEmail}! Check your inbox.`);
     } catch (error) {
@@ -338,72 +331,30 @@ export default function BlogEditor({ editingBlog, onSave }) {
         try {
           console.log("📧 Sending email newsletter to waitlist members...");
 
-          // Get waitlist member emails
-          const { data: waitlistMembers, error: waitlistError } = await supabase
-            .from('waitlist')
-            .select('email, name')
-            .order('created_at', { ascending: false });
+          const blogData = {
+            title,
+            excerpt: content.replace(/<[^>]*>/g, '').substring(0, 300) + (content.length > 300 ? '...' : ''),
+            featuredImageURL: featuredImage,
+            url: `${window.location.origin}/updates`
+          };
 
-          if (waitlistError) {
-            console.warn("Could not fetch waitlist members:", waitlistError);
-          }
+          const response = await fetch('https://rwwmyvrjvlibpzyqzxqg.functions.supabase.co/rapid-worker', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'blog_update',
+              blog: blogData
+            })
+          });
 
-          if (waitlistMembers && waitlistMembers.length > 0) {
-            console.log(`📧 Found ${waitlistMembers.length} waitlist members to email`);
-
-            let successCount = 0;
-            let failureCount = 0;
-
-            // Send individual emails to each waitlist member
-            for (let i = 0; i < waitlistMembers.length; i++) {
-              const member = waitlistMembers[i];
-
-              try {
-                console.log(`📤 Sending to ${member.email}...`);
-
-                const response = await fetch('/api/sendBlogEmail', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    to: member.email,
-                    subject: `🧬 ${title}`,
-                    title,
-                    excerpt: content.replace(/<[^>]*>/g, '').substring(0, 300) + (content.length > 300 ? '...' : ''),
-                    featuredImage,
-                    url: `${window.location.origin}/updates`
-                  })
-                });
-
-                const text = await response.text();
-
-                if (!response.ok) {
-                  console.error(`❌ Failed to send to ${member.email}:`, response.status, text);
-                  failureCount++;
-                } else {
-                  console.log(`✅ Successfully sent to ${member.email}`);
-                  successCount++;
-                }
-
-                // Small delay between sends to prevent overwhelming the API
-                if (i < waitlistMembers.length - 1) {
-                  await new Promise(resolve => setTimeout(resolve, 100));
-                }
-
-              } catch (sendError) {
-                console.error(`💥 Error sending to ${member.email}:`, sendError);
-                failureCount++;
-              }
-            }
-
-            console.log(`📧 Newsletter campaign complete: ${successCount} successful, ${failureCount} failed`);
-            setMessage(prev => prev + ` 📧 Newsletter sent to ${successCount} waitlist members!`);
-
-            if (failureCount > 0) {
-              setMessage(prev => prev + ` (${failureCount} failed)`);
-            }
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Newsletter send failed:', errorText);
+            setMessage(prev => prev + " ⚠️ Blog saved but newsletter failed: " + errorText);
           } else {
-            console.log("📧 No waitlist members found, skipping newsletter send");
-            setMessage(prev => prev + " 📧 No waitlist members to notify.");
+            const data = await response.json();
+            console.log('✅ Newsletter sent successfully:', data);
+            setMessage(prev => prev + " 📧 Newsletter sent to all waitlist members!");
           }
         } catch (emailError) {
           console.error("Error sending newsletter:", emailError);
@@ -411,24 +362,35 @@ export default function BlogEditor({ editingBlog, onSave }) {
         }
       }
 
-      // Send member notifications if requested
+      // Send member notifications if requested (same as newsletter but can be separate if needed)
       if (sendNotification) {
         try {
           console.log("🔔 Sending member notifications...");
 
-          const notificationResult = await notifyAllMembers({
+          const blogData = {
             title,
-            content,
-            featured_image: featuredImage,
-            author
+            excerpt: content.replace(/<[^>]*>/g, '').substring(0, 300) + (content.length > 300 ? '...' : ''),
+            featuredImageURL: featuredImage,
+            url: `${window.location.origin}/updates`
+          };
+
+          const response = await fetch('https://rwwmyvrjvlibpzyqzxqg.functions.supabase.co/rapid-worker', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'blog_update',
+              blog: blogData
+            })
           });
 
-          if (notificationResult.success) {
-            console.log("✅ Member notifications sent successfully:", notificationResult);
-            setMessage(prev => prev + " 🔔 Notifications sent to " + notificationResult.successful + " members!");
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Notifications send failed:', errorText);
+            setMessage(prev => prev + " ⚠️ Blog saved but notifications failed: " + errorText);
           } else {
-            console.warn("⚠️ Some member notifications failed:", notificationResult);
-            setMessage(prev => prev + " ⚠️ Blog saved but some notifications failed: " + notificationResult.message);
+            const data = await response.json();
+            console.log('✅ Notifications sent successfully:', data);
+            setMessage(prev => prev + " 🔔 Notifications sent to all members!");
           }
         } catch (notificationError) {
           console.error("Error sending member notifications:", notificationError);
