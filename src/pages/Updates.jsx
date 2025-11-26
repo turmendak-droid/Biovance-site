@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react'
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import SEO from '../components/SEO'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
+import biovanceVideo from '../assets/redpandacompress_05-03-24 JayShawn Zytherian Biovance (1).mp4'
 
 const Updates = () => {
   const [blogs, setBlogs] = useState([])
@@ -41,6 +43,13 @@ const Updates = () => {
 
   return (
     <div className='min-h-screen bg-gradient-to-b from-gray-50 to-white'>
+      <SEO
+        title="Updates & Research Insights"
+        description="Stay informed about our conservation progress, ecological research, and restoration projects. Latest findings in AI-powered biodiversity conservation."
+        keywords="conservation updates, research insights, ecological projects, biodiversity news, AI conservation research, restoration projects"
+        image="/assets/myanmar_tm5_2004349_lrg.jpg"
+        url="/updates"
+      />
       {/* Navbar */}
       <div className='bg-gradient-to-b from-green-900 to-green-800'>
         <Navbar />
@@ -69,6 +78,72 @@ const Updates = () => {
             <p className='text-xl font-["Inter"] text-green-100 leading-relaxed max-w-3xl'>
               Stay informed about our conservation progress, ecological research, and restoration projects.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Company Video Section */}
+      <section className='py-16 bg-gradient-to-b from-white to-green-50'>
+        <div className='container mx-auto px-6'>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className='max-w-4xl mx-auto text-center mb-12'
+          >
+            <h2 className='text-3xl md:text-4xl font-bold font-["Space_Grotesk"] text-green-900 mb-4'>
+              🧬 Our Mission in Action
+            </h2>
+            <p className='text-lg font-["Inter"] text-gray-600 mb-8'>
+              Discover how we're revolutionizing conservation through AI-powered research and ecological restoration.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
+            className='max-w-5xl mx-auto'
+          >
+            <div className='relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-900/10 to-emerald-900/10 backdrop-blur-sm border border-green-200/30 shadow-2xl'
+                 style={{
+                   boxShadow: '0 12px 40px rgba(5, 59, 46, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                 }}>
+              <video
+                className='w-full h-auto object-cover rounded-2xl'
+                controls
+                
+                preload='metadata'
+                style={{
+                  filter: 'brightness(0.95) contrast(1.05)',
+                  boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <source src={biovanceVideo} type='video/mp4' />
+                <source src='/assets/From KlickPin CF Nature scene nel 2025.mp4' type='video/mp4' />
+                <source src='/assets/178809-860734631.mp4' type='video/mp4' />
+                Your browser does not support the video tag.
+              </video>
+
+              {/* Subtle Video Overlay */}
+              <div className='absolute inset-0 bg-gradient-to-t from-green-900/20 via-transparent to-transparent pointer-events-none rounded-2xl'></div>
+            </div>
+
+            {/* Video Description */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+              className='text-center mt-8'
+            >
+              <p className='text-gray-600 font-["Inter"] text-lg leading-relaxed max-w-3xl mx-auto'>
+                Our latest work showcases the intersection of cutting-edge technology and ecological restoration,
+                demonstrating measurable impacts in biodiversity conservation and ecosystem recovery.
+              </p>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -110,6 +185,8 @@ const Updates = () => {
                     src={blog.featured_image || '/assets/41308.jpg'}
                     alt={blog.title}
                     className='w-full h-48 object-cover'
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div className='p-6'>
                     <h3 className='text-lg font-semibold font-["Space_Grotesk"] text-green-900 mb-3'>

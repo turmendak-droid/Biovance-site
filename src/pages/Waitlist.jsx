@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import SEO from '../components/SEO'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
@@ -82,6 +83,13 @@ const Waitlist = () => {
 
   return (
     <div className='min-h-screen'>
+      <SEO
+        title="Join the Conservation Revolution"
+        description="Be among the first to access our AI-powered conservation intelligence platform. Join our exclusive waitlist and connect with researchers worldwide for a sustainable future."
+        keywords="conservation waitlist, AI conservation platform, biodiversity research, environmental technology, conservation intelligence, early access"
+        image="/assets/myanmar_tm5_2004349_lrg.jpg"
+        url="/waitlist"
+      />
       {/* Navbar */}
       <div className='bg-gradient-to-b from-green-900 to-green-800'>
         <Navbar />

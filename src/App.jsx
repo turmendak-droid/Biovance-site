@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider } from './contexts/AuthContext'
+import SEO from './components/SEO'
 import Navbar from './components/Navbar'
 import Hero from './sections/Hero'
 import Visionsection from './sections/Visionsection'
@@ -13,8 +15,10 @@ import Login from './pages/Login'
 import Admin from './pages/Admin'
 import AdminWaitlist from './components/AdminWaitlist'
 import FloatingCard from './components/FloatingCard'
+import Chatbot from './components/Chatbot'
 import ProtectedRoute from './components/ProtectedRoute'
 import Waitlist from './pages/Waitlist'
+import Contact from './pages/Contact'
 import { supabase } from './lib/supabase'
 import { initializeDatabase, ensureSupabaseCacheSynced } from './lib/supabaseUtils'
 
@@ -26,6 +30,13 @@ console.log('Supabase storage available:', !!supabase?.storage)
 
 const Home = () => (
   <div>
+    <SEO
+      title="AI That Learns from Nature"
+      description="Exploring the intelligence of nature through AI-powered conservation research. Join our mission to protect biodiversity using cutting-edge machine learning and ecological insights."
+      keywords="AI conservation, biodiversity research, machine learning ecology, nature intelligence, environmental technology, conservation AI, ecological research, biovance"
+      image="/assets/myanmar_tm5_2004349_lrg.jpg"
+      url="/"
+    />
     <div className='h-screen bg-cover bg-center relative' style={{backgroundImage: 'url(/assets/myanmar_tm5_2004349_lrg.jpg)', backgroundPosition: 'center bottom'}}>
       <Navbar />
       <Hero />
@@ -60,17 +71,21 @@ const App = () => {
   }, [])
 
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/updates" element={<Updates />} />
-        <Route path="/blogs/:id" element={<BlogDetail />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/admin/waitlist" element={<ProtectedRoute><AdminWaitlist /></ProtectedRoute>} />
-        <Route path="/waitlist" element={<Waitlist />} />
-      </Routes>
-    </AuthProvider>
+    <HelmetProvider>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/updates" element={<Updates />} />
+          <Route path="/blogs/:id" element={<BlogDetail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/waitlist" element={<ProtectedRoute><AdminWaitlist /></ProtectedRoute>} />
+          <Route path="/waitlist" element={<Waitlist />} />
+          <Route path="/contact" element={<Contact />} />
+        </Routes>
+        <Chatbot />
+      </AuthProvider>
+    </HelmetProvider>
   )
 }
 

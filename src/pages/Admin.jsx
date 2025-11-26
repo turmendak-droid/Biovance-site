@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase'
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('overview')
-  const [editingBlog, setEditingBlog] = useState(null)
+  const [editingBlog, setEditingBlog] = useState(undefined)
   const [blogs, setBlogs] = useState([])
   const [stats, setStats] = useState({
     totalBlogs: 0,
@@ -154,74 +154,91 @@ const Admin = () => {
 
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-gray-50 to-white'>
+    <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'>
       {/* Navbar */}
-      <div className='bg-gradient-to-b from-green-900 to-green-800'>
+      <div className='bg-white shadow-sm border-b border-gray-200'>
         <Navbar />
       </div>
 
       {/* Hero Section */}
-      <section className='relative py-20 bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white overflow-hidden'>
-        <div className='absolute inset-0 opacity-10'>
-          <div className='absolute top-0 left-0 w-96 h-96 bg-green-400 rounded-full blur-3xl'></div>
-          <div className='absolute bottom-0 right-0 w-96 h-96 bg-emerald-400 rounded-full blur-3xl'></div>
-        </div>
+      <section className='relative py-16 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white overflow-hidden'>
+        <div className='absolute inset-0 bg-black/10'></div>
+        <div className='absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl -translate-y-36 translate-x-36'></div>
+        <div className='absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl translate-y-24 -translate-x-24'></div>
         <div className='container mx-auto px-6 relative z-10'>
-          <div className='max-w-4xl'>
-            <Link to='/' className='inline-flex items-center text-green-200 hover:text-white transition-colors mb-6 text-sm font-["Inter"]'>
-              ← Back to Home
+          <div className='max-w-5xl'>
+            <Link to='/' className='inline-flex items-center text-white/80 hover:text-white transition-all duration-200 mb-8 text-sm font-medium hover:translate-x-1'>
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Home
             </Link>
-            <h1 className='text-5xl md:text-6xl font-bold font-["Space_Grotesk"] mb-6'>
-              🛠️ Admin Dashboard
-            </h1>
-            <p className='text-xl font-["Inter"] text-green-100 leading-relaxed max-w-3xl'>
-              Manage your blog posts, newsletter subscribers, and waitlist members with ease.
-            </p>
+            <div className='flex items-center gap-4 mb-6'>
+              <div className='p-3 bg-white/20 rounded-xl backdrop-blur-sm'>
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className='text-4xl md:text-5xl font-bold mb-2 font-["Inter"]'>
+                  Admin Dashboard
+                </h1>
+                <p className='text-lg text-white/90 font-["Inter"] leading-relaxed'>
+                  Comprehensive management center for your Biovance ecosystem
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Navigation Tabs */}
-      <section className='py-8 bg-white border-b border-gray-200'>
+      <section className='py-6 bg-white border-b border-gray-200 shadow-sm'>
         <div className='container mx-auto px-6'>
-          <div className='flex flex-wrap justify-between items-center gap-4'>
-            <div className='flex flex-wrap gap-2'>
+          <div className='flex flex-wrap justify-between items-center gap-6'>
+            <nav className='flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl'>
               {[
-                { id: 'overview', label: 'Overview', icon: BarChart3 },
-                { id: 'blogs', label: 'Blog Writing', icon: FileText },
-                { id: 'users', label: 'Users & Members', icon: Users },
-                { id: 'waitlist', label: 'Waitlist', icon: Users },
-                { id: 'gallery', label: 'Media Gallery', icon: Image },
-                { id: 'settings', label: 'Settings', icon: Settings }
+                { id: 'overview', label: 'Overview', icon: BarChart3, color: 'blue' },
+                { id: 'blogs', label: 'Blog Writing', icon: FileText, color: 'green' },
+                { id: 'users', label: 'Users & Members', icon: Users, color: 'purple' },
+                { id: 'waitlist', label: 'Waitlist', icon: Users, color: 'indigo' },
+                { id: 'gallery', label: 'Media Gallery', icon: Image, color: 'pink' },
+                { id: 'settings', label: 'Settings', icon: Settings, color: 'gray' }
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 ${
                     activeTab === tab.id
-                      ? 'bg-green-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? `bg-${tab.color}-600 text-white shadow-lg transform scale-105`
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white hover:shadow-md'
                   }`}
                 >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
+                  <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-white' : `text-${tab.color}-600`}`} />
+                  <span className='hidden sm:inline'>{tab.label}</span>
+                  <span className='sm:hidden'>{tab.label.split(' ')[0]}</span>
                 </button>
               ))}
-            </div>
+            </nav>
 
             <div className='flex items-center gap-4'>
-              <span className='text-sm text-gray-600'>
-                Welcome, <span className='font-medium text-green-700'>{user?.email}</span>
-              </span>
+              <div className='flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full'>
+                <div className='w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold'>
+                  {user?.email?.charAt(0).toUpperCase()}
+                </div>
+                <span className='text-sm font-medium text-gray-700 hidden sm:block'>
+                  {user?.email}
+                </span>
+              </div>
               <button
                 onClick={async () => {
                   await signOut()
                   window.location.href = '/'
                 }}
-                className='flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors'
+                className='flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5'
               >
                 <LogOut className="w-4 h-4" />
-                Sign Out
+                <span className='hidden sm:inline'>Sign Out</span>
               </button>
             </div>
           </div>
@@ -229,67 +246,142 @@ const Admin = () => {
       </section>
 
       {/* Content Sections */}
-      <section className='py-8 bg-gray-50 min-h-screen'>
-        <div className='container mx-auto px-6'>
+      <section className='py-12 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 min-h-screen'>
+        <div className='container mx-auto px-6 max-w-7xl'>
           {activeTab === 'overview' && (
             <div className='space-y-8'>
-              <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
-                <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-200'>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm font-medium text-gray-600'>Total Blogs</p>
-                      <p className='text-2xl font-bold text-gray-900'>{stats.totalBlogs}</p>
-                    </div>
-                    <FileText className='w-8 h-8 text-blue-600' />
+              {/* Welcome Message */}
+              <div className='bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6'>
+                <div className='flex items-center gap-4'>
+                  <div className='p-3 bg-blue-100 rounded-xl'>
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
                   </div>
-                </div>
-                <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-200'>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm font-medium text-gray-600'>Newsletter Subs</p>
-                      <p className='text-2xl font-bold text-gray-900'>{stats.newsletterSubs}</p>
-                    </div>
-                    <Users className='w-8 h-8 text-green-600' />
-                  </div>
-                </div>
-                <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-200'>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm font-medium text-gray-600'>Waitlist</p>
-                      <p className='text-2xl font-bold text-gray-900'>{stats.waitlist}</p>
-                    </div>
-                    <Users className='w-8 h-8 text-purple-600' />
-                  </div>
-                </div>
-                <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-200'>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm font-medium text-gray-600'>Media Files</p>
-                      <p className='text-2xl font-bold text-gray-900'>{stats.mediaFiles}</p>
-                    </div>
-                    <Image className='w-8 h-8 text-orange-600' />
+                  <div>
+                    <h2 className='text-xl font-bold text-gray-900 mb-1'>Welcome back, Admin!</h2>
+                    <p className='text-blue-700'>Here's what's happening with your Biovance ecosystem today.</p>
                   </div>
                 </div>
               </div>
 
-              <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-200'>
-                <h3 className='text-lg font-semibold text-gray-900 mb-4'>Recent Activity</h3>
-                <div className='space-y-3'>
-                  <div className='flex items-center gap-3 p-3 bg-gray-50 rounded-lg'>
-                    <div className='w-2 h-2 bg-green-500 rounded-full'></div>
-                    <span className='text-sm text-gray-600'>New blog post published: "AI Conservation Advances"</span>
-                    <span className='text-xs text-gray-400 ml-auto'>2 hours ago</span>
+              {/* Stats Cards */}
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1'>
+                  <div className='flex items-center justify-between mb-4'>
+                    <div className='p-3 bg-blue-100 rounded-xl'>
+                      <FileText className='w-6 h-6 text-blue-600' />
+                    </div>
+                    <div className='text-right'>
+                      <p className='text-2xl font-bold text-gray-900'>{stats.totalBlogs}</p>
+                      <p className='text-xs text-gray-500 uppercase tracking-wide'>Total Blogs</p>
+                    </div>
                   </div>
-                  <div className='flex items-center gap-3 p-3 bg-gray-50 rounded-lg'>
-                    <div className='w-2 h-2 bg-green-500 rounded-full'></div>
-                    <span className='text-sm text-gray-600'>5 new newsletter subscribers</span>
-                    <span className='text-xs text-gray-400 ml-auto'>4 hours ago</span>
+                  <div className='w-full bg-gray-200 rounded-full h-2'>
+                    <div className='bg-blue-500 h-2 rounded-full' style={{width: '75%'}}></div>
                   </div>
-                  <div className='flex items-center gap-3 p-3 bg-gray-50 rounded-lg'>
-                    <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
-                    <span className='text-sm text-gray-600'>3 new waitlist signups</span>
-                    <span className='text-xs text-gray-400 ml-auto'>6 hours ago</span>
+                </div>
+
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1'>
+                  <div className='flex items-center justify-between mb-4'>
+                    <div className='p-3 bg-green-100 rounded-xl'>
+                      <Users className='w-6 h-6 text-green-600' />
+                    </div>
+                    <div className='text-right'>
+                      <p className='text-2xl font-bold text-gray-900'>{stats.newsletterSubs}</p>
+                      <p className='text-xs text-gray-500 uppercase tracking-wide'>Newsletter</p>
+                    </div>
                   </div>
+                  <div className='w-full bg-gray-200 rounded-full h-2'>
+                    <div className='bg-green-500 h-2 rounded-full' style={{width: '60%'}}></div>
+                  </div>
+                </div>
+
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1'>
+                  <div className='flex items-center justify-between mb-4'>
+                    <div className='p-3 bg-purple-100 rounded-xl'>
+                      <Users className='w-6 h-6 text-purple-600' />
+                    </div>
+                    <div className='text-right'>
+                      <p className='text-2xl font-bold text-gray-900'>{stats.waitlist}</p>
+                      <p className='text-xs text-gray-500 uppercase tracking-wide'>Waitlist</p>
+                    </div>
+                  </div>
+                  <div className='w-full bg-gray-200 rounded-full h-2'>
+                    <div className='bg-purple-500 h-2 rounded-full' style={{width: '85%'}}></div>
+                  </div>
+                </div>
+
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1'>
+                  <div className='flex items-center justify-between mb-4'>
+                    <div className='p-3 bg-orange-100 rounded-xl'>
+                      <Image className='w-6 h-6 text-orange-600' />
+                    </div>
+                    <div className='text-right'>
+                      <p className='text-2xl font-bold text-gray-900'>{stats.mediaFiles}</p>
+                      <p className='text-xs text-gray-500 uppercase tracking-wide'>Media Files</p>
+                    </div>
+                  </div>
+                  <div className='w-full bg-gray-200 rounded-full h-2'>
+                    <div className='bg-orange-500 h-2 rounded-full' style={{width: '45%'}}></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300'>
+                  <div className='flex items-center gap-3 mb-4'>
+                    <div className='p-2 bg-green-100 rounded-lg'>
+                      <FileText className='w-5 h-5 text-green-600' />
+                    </div>
+                    <div>
+                      <h3 className='font-semibold text-gray-900'>Create Blog Post</h3>
+                      <p className='text-sm text-gray-600'>Write and publish new content</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('blogs')}
+                    className='w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors duration-200 font-medium'
+                  >
+                    Start Writing →
+                  </button>
+                </div>
+
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300'>
+                  <div className='flex items-center gap-3 mb-4'>
+                    <div className='p-2 bg-blue-100 rounded-lg'>
+                      <Users className='w-5 h-5 text-blue-600' />
+                    </div>
+                    <div>
+                      <h3 className='font-semibold text-gray-900'>Manage Users</h3>
+                      <p className='text-sm text-gray-600'>View waitlist and members</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('waitlist')}
+                    className='w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors duration-200 font-medium'
+                  >
+                    View Members →
+                  </button>
+                </div>
+
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300'>
+                  <div className='flex items-center gap-3 mb-4'>
+                    <div className='p-2 bg-purple-100 rounded-lg'>
+                      <Image className='w-5 h-5 text-purple-600' />
+                    </div>
+                    <div>
+                      <h3 className='font-semibold text-gray-900'>Media Gallery</h3>
+                      <p className='text-sm text-gray-600'>Upload and manage images</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('gallery')}
+                    className='w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors duration-200 font-medium'
+                  >
+                    Open Gallery →
+                  </button>
                 </div>
               </div>
             </div>
@@ -297,19 +389,35 @@ const Admin = () => {
 
           {activeTab === 'blogs' && (
             <div className='space-y-8'>
-              {editingBlog ? (
-                // Show editor when editing
-                <div>
-                  <button
-                    onClick={() => setEditingBlog(null)}
-                    className='mb-4 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors'
-                  >
-                    ← Back to Blogs List
-                  </button>
+              {editingBlog !== undefined ? (
+                // Show editor when editing or creating new
+                <div className='space-y-6'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-4'>
+                      <button
+                        onClick={() => setEditingBlog(undefined)}
+                        className='flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all duration-200 hover:shadow-md'
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back to Blogs
+                      </button>
+                      <div className='h-6 w-px bg-gray-300'></div>
+                      <div>
+                        <h1 className='text-2xl font-bold text-gray-900'>
+                          {editingBlog ? 'Edit Blog Post' : 'Create New Blog'}
+                        </h1>
+                        <p className='text-gray-600'>
+                          {editingBlog ? 'Make changes to your blog post' : 'Write and publish engaging content'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <BlogEditor
                     editingBlog={editingBlog}
                     onSave={() => {
-                      setEditingBlog(null);
+                      setEditingBlog(undefined);
                       // Refresh blogs list
                       window.location.reload();
                     }}
@@ -318,72 +426,105 @@ const Admin = () => {
               ) : (
                 // Show blogs list
                 <div className='space-y-6'>
-                  <div className='flex justify-between items-center'>
-                    <h2 className='text-2xl font-bold text-gray-900'>Blog Management</h2>
+                  <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4'>
+                    <div>
+                      <h2 className='text-3xl font-bold text-gray-900'>Blog Management</h2>
+                      <p className='text-gray-600 mt-1'>Create, edit, and manage your blog posts</p>
+                    </div>
                     <button
-                      onClick={() => setEditingBlog({})} // Empty object for new blog
-                      className='bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2'
+                      onClick={() => setEditingBlog(null)} // null for new blog
+                      className='bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium'
                     >
-                      ✏️ Write New Blog
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Write New Blog
                     </button>
                   </div>
 
                   {blogs.length === 0 ? (
-                    <div className='bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center'>
-                      <FileText className='w-12 h-12 text-gray-400 mx-auto mb-4' />
-                      <h3 className='text-lg font-semibold text-gray-900 mb-2'>No blogs yet</h3>
-                      <p className='text-gray-600 mb-4'>Create your first blog post to get started.</p>
-                      <button
-                        onClick={() => setEditingBlog({})} // Empty object for new blog
-                        className='bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors'
-                      >
-                        Create First Blog
-                      </button>
+                    <div className='bg-white p-12 rounded-3xl shadow-xl border border-gray-100 text-center relative overflow-hidden'>
+                      <div className='absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full blur-3xl opacity-50'></div>
+                      <div className='absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-green-100 to-blue-100 rounded-full blur-2xl opacity-50'></div>
+                      <div className='relative z-10'>
+                        <div className='w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg'>
+                          <FileText className='w-10 h-10 text-white' />
+                        </div>
+                        <h3 className='text-2xl font-bold text-gray-900 mb-3'>Start Your Blog Journey</h3>
+                        <p className='text-gray-600 mb-8 max-w-md mx-auto leading-relaxed'>
+                          Create your first blog post and share your insights on AI-powered conservation with the world.
+                        </p>
+                        <button
+                          onClick={() => setEditingBlog(null)} // null for new blog
+                          className='bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-medium text-lg'
+                        >
+                          ✍️ Write Your First Blog
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <div className='grid gap-4'>
+                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
                       {blogs.map((blog) => (
-                        <div key={blog.id} className='bg-white p-6 rounded-xl shadow-sm border border-gray-200'>
-                          <div className='flex justify-between items-start'>
-                            <div className='flex-1'>
-                              <h3 className='text-xl font-semibold text-gray-900 mb-2'>{blog.title}</h3>
-                              <p className='text-gray-600 mb-3 line-clamp-2'>{blog.excerpt || 'No excerpt'}</p>
-                              <div className='flex items-center gap-4 text-sm text-gray-500'>
-                                <span>By {blog.author || 'Unknown'}</span>
-                                <span>•</span>
-                                <span>{new Date(blog.created_at).toLocaleDateString()}</span>
-                                <span>•</span>
-                                <span className={`px-2 py-1 rounded-full text-xs ${
-                                  blog.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        <div key={blog.id} className='bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden group'>
+                          {blog.featured_image && (
+                            <div className='relative h-48 overflow-hidden'>
+                              <img
+                                src={blog.featured_image}
+                                alt="Featured"
+                                className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'
+                              />
+                              <div className='absolute top-4 right-4'>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  blog.published
+                                    ? 'bg-green-500 text-white'
+                                    : 'bg-yellow-500 text-white'
                                 }`}>
                                   {blog.published ? 'Published' : 'Draft'}
                                 </span>
                               </div>
                             </div>
-                            <div className='flex gap-2 ml-4'>
+                          )}
+                          <div className='p-6'>
+                            <h3 className='text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors'>
+                              {blog.title}
+                            </h3>
+                            <p className='text-gray-600 mb-4 line-clamp-3 text-sm leading-relaxed'>
+                              {blog.excerpt || blog.content?.substring(0, 120) + '...' || 'No content preview available'}
+                            </p>
+                            <div className='flex items-center justify-between text-sm text-gray-500 mb-4'>
+                              <span className='flex items-center gap-1'>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                {blog.author || 'Unknown'}
+                              </span>
+                              <span className='flex items-center gap-1'>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {new Date(blog.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className='flex gap-3'>
                               <button
                                 onClick={() => handleEditBlog(blog)}
-                                className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2'
+                                className='flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium hover:shadow-md transform hover:-translate-y-0.5'
                               >
-                                ✏️ Edit
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteBlog(blog.id)}
-                                className='bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2'
+                                className='px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all duration-200 flex items-center gap-2 font-medium hover:shadow-md border border-red-200'
                               >
-                                🗑️ Delete
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                               </button>
                             </div>
                           </div>
-                          {blog.featured_image && (
-                            <div className='mt-4'>
-                              <img
-                                src={blog.featured_image}
-                                alt="Featured"
-                                className='w-32 h-20 object-cover rounded-lg border border-gray-200'
-                              />
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
