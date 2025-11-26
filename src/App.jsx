@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider } from './contexts/AuthContext'
 import SEO from './components/SEO'
 import Navbar from './components/Navbar'
@@ -71,21 +70,19 @@ const App = () => {
   }, [])
 
   return (
-    <HelmetProvider>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/updates" element={<Updates />} />
-          <Route path="/blogs/:id" element={<BlogDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/waitlist" element={<ProtectedRoute><AdminWaitlist /></ProtectedRoute>} />
-          <Route path="/waitlist" element={<Waitlist />} />
-          <Route path="/contact" element={<Contact />} />
-        </Routes>
-        <Chatbot />
-      </AuthProvider>
-    </HelmetProvider>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/updates" element={<Updates />} />
+        <Route path="/blogs/:id" element={<BlogDetail />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/waitlist" element={<ProtectedRoute><AdminWaitlist /></ProtectedRoute>} />
+        <Route path="/waitlist" element={<Waitlist />} />
+        <Route path="/contact" element={<Contact />} />
+      </Routes>
+      <Chatbot />
+    </AuthProvider>
   )
 }
 

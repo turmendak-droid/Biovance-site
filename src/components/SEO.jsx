@@ -1,4 +1,4 @@
-import { Helmet } from 'react-helmet-async'
+import { useEffect } from 'react'
 
 const SEO = ({
   title,
@@ -96,100 +96,143 @@ const SEO = ({
     return baseData
   }
 
-  return (
-    <Helmet>
-      {/* Basic Meta Tags */}
-      <title>{fullTitle}</title>
-      <meta name="description" content={metaDescription} />
-      <meta name="keywords" content={metaKeywords} />
-      <meta name="author" content={author || siteName} />
+  useEffect(() => {
+    // Update document title
+    document.title = fullTitle
 
-      {/* Canonical URL */}
-      <link rel="canonical" href={fullUrl} />
+    // Helper function to update or create meta tag
+    const updateMetaTag = (name, content, property = false) => {
+      const attribute = property ? 'property' : 'name'
+      let element = document.querySelector(`meta[${attribute}="${name}"]`)
 
-      {/* Open Graph */}
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={metaDescription} />
-      <meta property="og:image" content={fullImage} />
-      <meta property="og:url" content={fullUrl} />
-      <meta property="og:type" content={type} />
-      <meta property="og:site_name" content={siteName} />
-      <meta property="og:locale" content="en_US" />
+      if (element) {
+        element.setAttribute('content', content)
+      } else {
+        element = document.createElement('meta')
+        element.setAttribute(attribute, name)
+        element.setAttribute('content', content)
+        document.head.appendChild(element)
+      }
+    }
 
-      {/* Twitter Cards */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={metaDescription} />
-      <meta name="twitter:image" content={fullImage} />
+    // Helper function to update or create link tag
+    const updateLinkTag = (rel, href) => {
+      let element = document.querySelector(`link[rel="${rel}"]`)
 
-      {/* Article specific meta tags */}
-      {type === 'article' && published && (
-        <meta property="article:published_time" content={published} />
-      )}
-      {type === 'article' && modified && (
-        <meta property="article:modified_time" content={modified} />
-      )}
-      {type === 'article' && author && (
-        <meta property="article:author" content={author} />
-      )}
-      {type === 'article' && section && (
-        <meta property="article:section" content={section} />
-      )}
-      {type === 'article' && tags && tags.map(tag => (
-        <meta key={tag} property="article:tag" content={tag} />
-      ))}
+      if (element) {
+        element.setAttribute('href', href)
+      } else {
+        element = document.createElement('link')
+        element.setAttribute('rel', rel)
+        element.setAttribute('href', href)
+        document.head.appendChild(element)
+      }
+    }
 
-      {/* Additional SEO meta tags */}
-      <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-      <meta name="googlebot" content="index, follow" />
+    // Basic Meta Tags
+    updateMetaTag('description', metaDescription)
+    updateMetaTag('keywords', metaKeywords)
+    updateMetaTag('author', author || siteName)
 
-      {/* Mobile optimization */}
-      <meta name="format-detection" content="telephone=no" />
-      <meta name="mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-      <meta name="apple-mobile-web-app-title" content={siteName} />
+    // Canonical URL
+    updateLinkTag('canonical', fullUrl)
 
-      {/* Theme color */}
-      <meta name="theme-color" content="#36A476" />
-      <meta name="msapplication-TileColor" content="#36A476" />
+    // Open Graph
+    updateMetaTag('og:title', fullTitle, true)
+    updateMetaTag('og:description', metaDescription, true)
+    updateMetaTag('og:image', fullImage, true)
+    updateMetaTag('og:url', fullUrl, true)
+    updateMetaTag('og:type', type, true)
+    updateMetaTag('og:site_name', siteName, true)
+    updateMetaTag('og:locale', 'en_US', true)
 
-      {/* Structured Data */}
-      <script type="application/ld+json">
-        {JSON.stringify(generateStructuredData())}
-      </script>
+    // Twitter Cards
+    updateMetaTag('twitter:card', 'summary_large_image')
+    updateMetaTag('twitter:title', fullTitle)
+    updateMetaTag('twitter:description', metaDescription)
+    updateMetaTag('twitter:image', fullImage)
 
-      {/* Breadcrumbs structured data for articles */}
-      {type === 'article' && (
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Home",
-                "item": siteUrl
-              },
-              {
-                "@type": "ListItem",
-                "position": 2,
-                "name": "Updates",
-                "item": `${siteUrl}/updates`
-              },
-              {
-                "@type": "ListItem",
-                "position": 3,
-                "name": title,
-                "item": fullUrl
-              }
-            ]
-          })}
-        </script>
-      )}
-    </Helmet>
-  )
+    // Article specific meta tags
+    if (type === 'article') {
+      if (published) updateMetaTag('article:published_time', published, true)
+      if (modified) updateMetaTag('article:modified_time', modified, true)
+      if (author) updateMetaTag('article:author', author, true)
+      if (section) updateMetaTag('article:section', section, true)
+      if (tags) {
+        tags.forEach(tag => {
+          updateMetaTag('article:tag', tag, true)
+        })
+      }
+    }
+
+    // Additional SEO meta tags
+    updateMetaTag('robots', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1')
+    updateMetaTag('googlebot', 'index, follow')
+
+    // Mobile optimization
+    updateMetaTag('format-detection', 'telephone=no')
+    updateMetaTag('mobile-web-app-capable', 'yes')
+    updateMetaTag('apple-mobile-web-app-capable', 'yes')
+    updateMetaTag('apple-mobile-web-app-status-bar-style', 'default')
+    updateMetaTag('apple-mobile-web-app-title', siteName)
+
+    // Theme color
+    updateMetaTag('theme-color', '#36A476')
+    updateMetaTag('msapplication-TileColor', '#36A476')
+
+    // Structured Data
+    let structuredDataScript = document.querySelector('script[type="application/ld+json"]')
+    if (structuredDataScript) {
+      structuredDataScript.textContent = JSON.stringify(generateStructuredData())
+    } else {
+      structuredDataScript = document.createElement('script')
+      structuredDataScript.type = 'application/ld+json'
+      structuredDataScript.textContent = JSON.stringify(generateStructuredData())
+      document.head.appendChild(structuredDataScript)
+    }
+
+    // Breadcrumbs structured data for articles
+    if (type === 'article') {
+      const breadcrumbsData = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": siteUrl
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Updates",
+            "item": `${siteUrl}/updates`
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": title,
+            "item": fullUrl
+          }
+        ]
+      }
+
+      let breadcrumbsScript = document.querySelector('script[data-breadcrumbs]')
+      if (breadcrumbsScript) {
+        breadcrumbsScript.textContent = JSON.stringify(breadcrumbsData)
+      } else {
+        breadcrumbsScript = document.createElement('script')
+        breadcrumbsScript.type = 'application/ld+json'
+        breadcrumbsScript.setAttribute('data-breadcrumbs', 'true')
+        breadcrumbsScript.textContent = JSON.stringify(breadcrumbsData)
+        document.head.appendChild(breadcrumbsScript)
+      }
+    }
+
+  }, [title, description, keywords, image, url, type, author, published, modified, section, tags])
+
+  return null // This component doesn't render anything
 }
 
 export default SEO
