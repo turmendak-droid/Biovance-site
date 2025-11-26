@@ -19,17 +19,6 @@ A modern React application for Biovance's AI × Nature × Discovery platform, bu
 - 📊 **Recovery Visualization**: Animated progress bars and stage indicators during system recovery
 - ⚡ **Instant API Cache Sync**: Automatic Supabase REST API schema cache refresh after changes
 
-## Environment Variables
-
-Create a `.env` file in the root directory with:
-
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-RESEND_API_KEY=your-resend-api-key
-VITE_SUPABASE_WAITLIST_TABLE=waitlist
-SITE_URL=https://biovance-site.pages.dev
-```
 
 ## God-Mode Enterprise Supabase Integration
 
@@ -114,12 +103,6 @@ The admin panel now includes a **System Status** widget showing:
 - Database initialization
 - Error recoveries
 
-**All metrics stored in `_logs` table for analysis without external services.**
-
-### Instant API Cache Synchronization
-
-**Zero 404/500 Errors from Cache Desync:**
-
 The system includes a dedicated `refresh_supabase()` RPC function that forces Supabase to refresh its REST API schema cache instantly.
 
 **Automatic Triggers:**
@@ -127,97 +110,13 @@ The system includes a dedicated `refresh_supabase()` RPC function that forces Su
 - ✅ **On app startup** to ensure cache consistency
 - ✅ **Manual refresh** via admin dashboard "⚡ Sync API Cache" button
 
-**How It Works:**
-```sql
--- RPC function created automatically
-CREATE OR REPLACE FUNCTION refresh_supabase()
-RETURNS TEXT AS $$
-BEGIN
-  PERFORM pg_notify('supabase:schema:refresh', 'manual_refresh');
-  RETURN 'API schema cache refresh triggered at ' || NOW()::TEXT;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```
-
-**Console Output:**
-```
-✅ API schema cache refreshed: API schema cache refresh triggered at 2025-11-12 21:08:34
-```
-
 **Benefits:**
 - ✅ **Immediate availability** of new tables/RPCs
 - ✅ **No manual cache refreshes** required
 - ✅ **Prevents 404 errors** after schema changes
 - ✅ **Production-safe** with automatic fallback
 
-### Manual Table Creation
 
-If needed, you can manually create tables in Supabase SQL Editor:
-
-```sql
--- Waitlist table
-CREATE TABLE IF NOT EXISTS waitlist (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
-  country TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Enable RLS and create policies
-ALTER TABLE waitlist ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow authenticated users to manage waitlist" ON waitlist FOR ALL TO authenticated USING (true);
-```
-
-## API Testing
-
-### Test Blog Email Endpoint
-
-To test the blog email endpoint locally (requires Wrangler dev server running):
-
-```bash
-curl -X POST http://localhost:8788/sendBlogEmail \
-  -H "Content-Type: application/json" \
-  -d '{
-    "to": "test@example.com",
-    "subject": "🧬 Test Blog Post",
-    "title": "Test Blog Post",
-    "excerpt": "This is a test blog post excerpt...",
-    "featuredImage": "https://example.com/image.jpg",
-    "url": "https://biovance-site.pages.dev/updates"
-  }'
-```
-
-Expected response:
-```json
-{
-  "success": true,
-  "message": "Email sent successfully",
-  "result": { ... }
-}
-```
-
-### Local Development Setup
-
-1. **Install Wrangler CLI** (for Cloudflare Functions):
-   ```bash
-   npm install -g wrangler
-   ```
-
-2. **Run local functions server** (Terminal 1):
-   ```bash
-   npm run functions:dev
-   ```
-   This runs: `wrangler pages dev . --port 8788`
-
-3. **Run Vite dev server** (Terminal 2):
-   ```bash
-   npm run dev
-   ```
-
-4. **Test the API**:
-   - Frontend calls: `fetch('/api/sendBlogEmail')` → proxied to `http://localhost:8788/sendBlogEmail`
-   - Direct calls: `http://localhost:8788/sendBlogEmail`
 
 ### Production Deployment
 
