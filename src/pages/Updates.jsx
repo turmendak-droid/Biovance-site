@@ -6,7 +6,7 @@ import SEO from '../components/SEO'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
-import biovanceVideo from '../assets/redpandacompress_05-03-24 JayShawn Zytherian Biovance (1).mp4'
+import biovanceVideo from '/assets/redpandacompress_05-03-24 JayShawn Zytherian Biovance (1).mp4'
 
 const Updates = () => {
   const [blogs, setBlogs] = useState([])
