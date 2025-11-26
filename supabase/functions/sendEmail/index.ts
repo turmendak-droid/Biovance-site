@@ -134,6 +134,89 @@ function createBlogUpdateEmailHTML(blog: { title: string; excerpt: string; featu
   `
 }
 
+// HTML Template for Contact Form Email
+function createContactFormEmailHTML(contact: { name: string; email: string; subject: string; message: string }): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Contact Form Submission</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc;">
+        <tr>
+          <td align="center" style="padding: 40px 20px;">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+              <!-- Header -->
+              <tr>
+                <td style="padding: 40px 40px 20px 40px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                  <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #36A476;">🧬 Biovance</h1>
+                  <p style="margin: 8px 0 0 0; font-size: 16px; color: #64748b;">New Contact Form Submission</p>
+                </td>
+              </tr>
+
+              <!-- Content -->
+              <tr>
+                <td style="padding: 40px;">
+                  <h2 style="margin: 0 0 24px 0; font-size: 20px; font-weight: 600; color: #1e293b;">Contact Details</h2>
+
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
+                        <strong style="color: #475569;">Name:</strong>
+                        <span style="color: #1e293b; margin-left: 8px;">${contact.name}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
+                        <strong style="color: #475569;">Email:</strong>
+                        <span style="color: #1e293b; margin-left: 8px;">${contact.email}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
+                        <strong style="color: #475569;">Subject:</strong>
+                        <span style="color: #1e293b; margin-left: 8px;">${contact.subject}</span>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <h3 style="margin: 32px 0 16px 0; font-size: 18px; font-weight: 600; color: #1e293b;">Message:</h3>
+                  <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #36A476;">
+                    <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #475569; white-space: pre-wrap;">${contact.message}</p>
+                  </div>
+
+                  <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 32px;">
+                    <tr>
+                      <td>
+                        <a href="mailto:${contact.email}" style="display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #36A476 0%, #22c55e 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(54, 164, 118, 0.3);">
+                          Reply to ${contact.name} →
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td style="padding: 32px 40px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; border-radius: 0 0 12px 12px;">
+                  <p style="margin: 0; font-size: 14px; color: #64748b;">
+                    This message was sent from the Biovance contact form.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `
+}
+
 export default {
   async fetch(req: Request, env: any, ctx: any) {
     // Handle CORS
@@ -298,6 +381,46 @@ export default {
         }
 
         console.log(`🎉 Blog update campaign complete: ${successCount} successful, ${failureCount} failed`)
+
+      } else if (body.type === 'contact_form') {
+        // Send contact form submission to admin email
+        const html = createContactFormEmailHTML(body.contact)
+
+        const auth = `Basic ${btoa(env.MAILJET_API_KEY + ":" + env.MAILJET_API_SECRET)}`
+
+        const mailjetResponse = await fetch('https://api.mailjet.com/v3.1/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': auth
+          },
+          body: JSON.stringify({
+            Messages: [
+              {
+                From: { Email: 'newsletter@biovance.ai', Name: 'Biovance Contact Form' },
+                To: [{ Email: 'boivance0@gmail.com' }],
+                Subject: `New Contact Form: ${body.contact.subject}`,
+                HTMLPart: html
+              }
+            ]
+          })
+        })
+
+        if (!mailjetResponse.ok) {
+          const errorData = await mailjetResponse.text()
+          console.error('❌ Contact form email failed:', errorData)
+          throw new Error(`Mailjet API error: ${mailjetResponse.status} - ${errorData}`)
+        }
+
+        const result = await mailjetResponse.json()
+
+        // Check Mailjet success status
+        if (result.Messages && result.Messages[0] && result.Messages[0].Status !== 'success') {
+          console.error('❌ Mailjet reported failure:', result.Messages[0])
+          throw new Error('Mailjet delivery failed')
+        }
+
+        console.log('✅ Contact form email sent to admin:', 'boivance0@gmail.com', 'Mailjet result:', result)
 
       } else {
         throw new Error('Invalid email type')
