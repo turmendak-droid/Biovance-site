@@ -6,7 +6,8 @@ import SEO from '../components/SEO'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
-import biovanceVideo from '/assets/redpandacompress_05-03-24 JayShawn Zytherian Biovance (1).mp4'
+// Video hosted on Vimeo - using embed player
+const vimeoVideoId = '1141065989'
 
 const Updates = () => {
   const [blogs, setBlogs] = useState([])
@@ -111,21 +112,20 @@ const Updates = () => {
                  style={{
                    boxShadow: '0 12px 40px rgba(5, 59, 46, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
                  }}>
-              <video
-                className='w-full h-auto object-cover rounded-2xl'
-                controls
-                
-                preload='metadata'
-                style={{
-                  filter: 'brightness(0.95) contrast(1.05)',
-                  boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.1)'
-                }}
-              >
-                <source src={biovanceVideo} type='video/mp4' />
-                <source src='/assets/From KlickPin CF Nature scene nel 2025.mp4' type='video/mp4' />
-                <source src='/assets/178809-860734631.mp4' type='video/mp4' />
-                Your browser does not support the video tag.
-              </video>
+              <div className='relative w-full' style={{ paddingBottom: '56.25%' /* 16:9 aspect ratio */ }}>
+                <iframe
+                  src={`https://player.vimeo.com/video/${vimeoVideoId}?badge=0&autopause=0&player_id=0&app_id=58479&byline=0&portrait=0&title=0`}
+                  className='absolute top-0 left-0 w-full h-full rounded-2xl'
+                  frameBorder="0"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  title="Biovance Mission Video"
+                  style={{
+                    filter: 'brightness(0.95) contrast(1.05)',
+                    boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.1)'
+                  }}
+                ></iframe>
+              </div>
 
               {/* Subtle Video Overlay */}
               <div className='absolute inset-0 bg-gradient-to-t from-green-900/20 via-transparent to-transparent pointer-events-none rounded-2xl'></div>
