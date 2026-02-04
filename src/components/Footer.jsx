@@ -1,7 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Twitter, Linkedin, Github, Globe } from 'lucide-react'
 
 const Footer = () => {
 
@@ -32,24 +31,17 @@ const Footer = () => {
               </h3>
             </div>
 
-            <p className="text-gray-600 text-sm leading-relaxed max-w-md mb-6">
+            <p className="text-gray-600 text-sm leading-relaxed max-w-md mb-4">
               Advancing AI-driven solutions for wildlife conservation, ecosystem restoration, and global collaboration.
             </p>
 
-            <div className="flex gap-4">
-              <a href="#" className="text-green-700 hover:text-green-900 transition-colors duration-300 hover:scale-110">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-green-700 hover:text-green-900 transition-colors duration-300 hover:scale-110">
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-green-700 hover:text-green-900 transition-colors duration-300 hover:scale-110">
-                <Github className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-green-700 hover:text-green-900 transition-colors duration-300 hover:scale-110">
-                <Globe className="w-5 h-5" />
-              </a>
-            </div>
+            {/* Address */}
+            <address className="text-gray-600 text-sm not-italic mb-6">
+              1300 S Litchfield Rd.<br />
+              STE 200A<br />
+              85338 Goodyear<br />
+              Arizona
+            </address>
           </motion.div>
 
           {/* Mission Column */}
@@ -80,16 +72,13 @@ const Footer = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.6 }}
-          viewport={{ once: true }}
           className="mt-12 pt-6 border-t border-green-100 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500"
         >
           <div>
             © 2025-26 Zytherion Biovance. All rights reserved.
           </div>
-          <div className="flex gap-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-green-700 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-green-700 transition-colors">Terms</a>
-            <a href="#" className="hover:text-green-700 transition-colors">Contact</a>
+          <div className="flex gap-6 mt-4 md:mt-0 pointer-events-auto">
+            <Link to="/contact" className="hover:text-green-700 transition-colors">Contact</Link>
             <a href="#" className="hover:text-green-700 transition-colors">Research</a>
           </div>
         </motion.div>
